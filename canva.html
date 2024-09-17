@@ -17,16 +17,14 @@ var myObstacles = [];
 var myScore;
 
 function startGame() {
-    myGamePiece = new gameObject(30, 30, "red", 10, 120);  
+    myGamePiece = new gameObject(30, 30, "red", 10, 120);
+    character2 = new gameObject(20, 20, "yellow", 20, 150);
+    
     myGamePiece.gravity = 0.05;
     myScore = new gameObject("30px", "Consolas", "black", 280, 40, "text");
+
+    
     myGameArea.start();
-    window.addEventListener('keydown', function (e) {
-        moveGamePiece(e);
-    });
-    window.addEventListener('keyup', function (e) {
-        stopGamePiece(e);
-    });
 }
 
 var myGameArea = {
@@ -130,29 +128,6 @@ function updateGameArea() {
 function everyinterval(n) {
     if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
     return false;
-}
-
-function moveGamePiece(e) {
-    if (e.key === "ArrowUp") {
-        myGamePiece.speedY = -2; // Move up
-    }
-    if (e.key === "ArrowDown") {
-        myGamePiece.speedY = 2; // Move down
-    }
-    if (e.key === "ArrowLeft") {
-        myGamePiece.speedX = -2; // Move left
-    }
-    if (e.key === "ArrowRight") {
-        myGamePiece.speedX = 2; // Move right
-    }
-function stopGamePiece(e) {
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        myGamePiece.speedY = 0;
-    }
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        myGamePiece.speedX = 0;
-    }
-
 }
 
 function accelerate(n) {
