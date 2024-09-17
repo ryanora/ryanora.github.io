@@ -9,19 +9,32 @@ canvas {
 }
 </style>
 </head>
-<body onload="startGame()">
+<body>
 <script>
 
 var myGamePiece;
 var myObstacles = [];
 var myScore;
+var gameStarted = false;
+var gameOver = false;
+var gamePaused = false;
 
 function startGame() {
-    myGamePiece = new gameObject(30, 30, "red", 10, 120);
-    myGamePiece.gravity = 0.05;
-    myScore = new gameObject("30px", "Consolas", "black", 280, 40, "text");
-    
-    myGameArea.start();
+    // Reset all variables if the game is restarting
+    if (!gameStarted || gameOver) {
+        myGamePiece = new gameObject(30, 30, "red", 10, 120);
+        myGamePiece.gravity = 0.02;  // Reduced gravity
+        myScore = new gameObject("30px", "Consolas", "black", 280, 40, "text");
+
+        myObstacles = [];  // Reset obstacles
+        myGameArea.frameNo = 0;  // Reset frame number (score)
+        gameOver = false;  // Reset game over state
+        gamePaused = false;  // Ensure the game is not paused at start
+        myGameArea.start();  // Start the game area
+        gameStarted = true;
+        backgroundImage = new Image();
+        backgroundImage.src = '1_game_background.png'; // Replace with your image URL
+    }
 }
 
 var myGameArea = {
@@ -33,9 +46,40 @@ var myGameArea = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
+
+        // Add event listeners for keyboard controls
+        window.addEventListener('keydown', function(e) {
+            if (!gameStarted || gameOver) startGame();
+            if (e.key === 'ArrowUp') { 
+                myGamePiece.gravity = -0.1;  // Fly up with reduced gravity
+                e.preventDefault();  // Prevent scrolling with Arrow keys
+            }
+            if (e.key === 'ArrowDown') { 
+                myGamePiece.speedY = 1;  // Speed down with Down arrow
+                e.preventDefault();  // Prevent scrolling with Arrow keys
+            }
+        });
+
+        window.addEventListener('keyup', function(e) {
+            if (e.key === 'ArrowUp') { myGamePiece.gravity = 0.02; }  // Reduced gravity when ArrowUp is released
+            if (e.key === 'ArrowDown') { myGamePiece.speedY = 0; }    // Stop moving down
+        });
     },
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    stop : function() {
+        clearInterval(this.interval);  // Stop the game loop
+        gameOver = true;  // Set game over state
+    },
+    pause : function() {
+        if (!gamePaused) {
+            clearInterval(this.interval);  // Pause the game
+            gamePaused = true;
+        } else {
+            this.interval = setInterval(updateGameArea, 20);  // Resume the game
+            gamePaused = false;
+        }
     }
 }
 
@@ -65,13 +109,20 @@ function gameObject(width, height, color, x, y, type) {
         this.gravitySpeed += this.gravity;
         this.x += this.speedX;
         this.y += this.speedY + this.gravitySpeed;
-        this.hitBottom();
+        this.hitEdges();  // Check for hitting the top or bottom edges
     }
-    this.hitBottom = function() {
+    this.hitEdges = function() {
         var rockbottom = myGameArea.canvas.height - this.height;
+        var ceiling = 0;  // Top of the canvas (invisible ceiling)
+
+        // Die when touching the bottom
         if (this.y > rockbottom) {
-            this.y = rockbottom;
-            this.gravitySpeed = 0;
+            myGameArea.stop();
+        }
+
+        // Die when touching the top
+        if (this.y < ceiling) {
+            myGameArea.stop();
         }
     }
     this.crashWith = function(otherobj) {
@@ -92,9 +143,12 @@ function gameObject(width, height, color, x, y, type) {
 }
 
 function updateGameArea() {
+    if (gamePaused) return;  // Skip updating the game when paused
+
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     for (i = 0; i < myObstacles.length; i += 1) {
         if (myGamePiece.crashWith(myObstacles[i])) {
+            myGameArea.stop();  // Stop the game when a collision happens
             return;
         } 
     }
@@ -108,14 +162,14 @@ function updateGameArea() {
         minGap = 50;
         maxGap = 200;
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
-        myObstacles.push(new gameObject(10, height, "green", x, 0));
-        myObstacles.push(new gameObject(10, myGameArea.canvas.height - height - gap, "green", x, height + gap));
+        myObstacles.push(new gameObject(30, height, "green", x, 0));  // Wider obstacles (30px wide)
+        myObstacles.push(new gameObject(30, myGameArea.canvas.height - height - gap, "green", x, height + gap));
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].x += -1;
         myObstacles[i].update();
     }
-    myScore.text="SCORE: " + myGameArea.frameNo;
+    myScore.text = "SCORE: " + myGameArea.frameNo;
     myScore.update();
     myGamePiece.newPos();
     myGamePiece.update();
@@ -126,13 +180,12 @@ function everyinterval(n) {
     return false;
 }
 
-function accelerate(n) {
-    myGamePiece.gravity = n;
-}
 </script>
 <br>
-<button onmousedown="accelerate(-0.2)" onmouseup="accelerate(0.05)">ACCELERATE</button>
-<p>Use the ACCELERATE button to stay in the air</p>
+<!-- Start Game and Pause/Resume Button -->
+<button onclick="startGame()">Start Game</button>
+<button onclick="myGameArea.pause()">Pause/Resume</button>
+<p>Use the Up and Down Arrow Keys to Move!</p>
 <p>How long can you stay alive?</p>
 </body>
 </html>
