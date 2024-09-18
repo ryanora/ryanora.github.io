@@ -37,6 +37,7 @@ var obstacleSpeed = -1; // Default obstacle speed
 // Audio elements
 var backgroundMusic;
 var deathSound;
+var powerUpSound;
 
 function startGame() {
     // Load images
@@ -65,6 +66,7 @@ function startGame() {
     backgroundMusic = new Audio('happy.mp3'); // Replace with your background music URL
     backgroundMusic.loop = true; // Set to loop
     deathSound = new Audio('8bit_bomb_explosion.mp3'); // Replace with your death sound URL
+    powerUpSound = new Audio('magical_3.mp3'); // Replace with your power-up sound URL
 
     // Ensure all images and sounds are loaded before starting the game
     backgroundImage.onload = playerImage.onload = playerImageUp.onload = playerImageDown.onload = obstacleImageUp.onload = obstacleImageDown.onload = powerUpImage.onload = function() {
@@ -255,6 +257,9 @@ function spawnPowerUp() {
 function applyPowerUpEffect() {
     powerUpEffect = 'invincible';
     effectStartTime = myGameArea.frameNo;
+
+    // Play power-up sound
+    powerUpSound.play();
 
     // Apply invincibility and moderate speed effect
     myGamePiece.speedX = 1; // Slightly increase player speed
