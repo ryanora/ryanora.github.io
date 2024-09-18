@@ -22,11 +22,39 @@ var backgroundImage;
 var playerImage;
 var playerImageUp;
 var playerImageDown;
+var obstacleImageUp;
+var obstacleImageDown;
 
 function startGame() {
+    // Load images
+    backgroundImage = new Image();
+    backgroundImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/9543592_4207840.jpg'; // Replace with your background image URL
+
+    playerImage = new Image();
+    playerImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/starfish-animal-tropical.png';  // Replace with the original player image URL
+
+    playerImageUp = new Image();
+    playerImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  // Replace with the up key pressed image URL
+
+    playerImageDown = new Image();
+    playerImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  // Replace with the down key pressed image URL
+
+    obstacleImageUp = new Image();
+    obstacleImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/sharkdown.png';
+
+    obstacleImageDown = new Image();
+    obstacleImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark.png'; // Replace with bottom obstacle image URL
+
+    // Ensure all images are loaded before starting the game
+    backgroundImage.onload = playerImage.onload = playerImageUp.onload = playerImageDown.onload = obstacleImageUp.onload = obstacleImageDown.onload = function() {
+        initGame();
+    };
+}
+
+function initGame() {
     // Reset all variables if the game is restarting
     if (!gameStarted || gameOver) {
-        myGamePiece = new gameObject(30, 30, "red", 10, 120, "image");
+        myGamePiece = new gameObject(30, 30, playerImage, 10, 120, "image");
         myGamePiece.gravity = 0.02;  // Reduced gravity
         myScore = new gameObject("30px", "Consolas", "black", 280, 40, "text");
 
@@ -36,20 +64,6 @@ function startGame() {
         gamePaused = false;  // Ensure the game is not paused at start
         myGameArea.start();  // Start the game area
         gameStarted = true;
-
-        // Load background image
-        backgroundImage = new Image();
-        backgroundImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/9543592_4207840.jpg'; // Replace with your background image URL
-
-        // Load player images
-        playerImage = new Image();
-        playerImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/starfish-animal-tropical.png';  // Replace with the original player image URL
-
-        playerImageUp = new Image();
-        playerImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  // Replace with the up key pressed image URL
-
-        playerImageDown = new Image();
-        playerImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  // Replace with the down key pressed image URL
     }
 }
 
@@ -104,7 +118,7 @@ var myGameArea = {
     }
 }
 
-function gameObject(width, height, color, x, y, type) {
+function gameObject(width, height, image, x, y, type) {
     this.type = type;
     this.width = width;
     this.height = height;
@@ -115,20 +129,17 @@ function gameObject(width, height, color, x, y, type) {
     this.gravity = 0;
     this.gravitySpeed = 0;
 
-    // Set the initial image for the player
-    this.image = playerImage;
+    // Set the initial image for the player or obstacle
+    this.image = image;
 
     this.update = function() {
         ctx = myGameArea.context;
         if (this.type == "text") {
             ctx.font = this.width + " " + this.height;
-            ctx.fillStyle = color;
+            ctx.fillStyle = "black";
             ctx.fillText(this.text, this.x, this.y);
         } else if (this.type == "image") {
             ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-        } else {
-            ctx.fillStyle = color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
         }
     }
     this.newPos = function() {
@@ -194,8 +205,9 @@ function updateGameArea() {
         minGap = 50;
         maxGap = 200;
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
-        myObstacles.push(new gameObject(30, height, "green", x, 0));  // Wider obstacles (30px wide)
-        myObstacles.push(new gameObject(30, myGameArea.canvas.height - height - gap, "green", x, height + gap));
+        // Add obstacles with images
+        myObstacles.push(new gameObject(30, height, obstacleImageUp, x, 0, "image"));  // Top obstacle with image
+        myObstacles.push(new gameObject(30, myGameArea.canvas.height - height - gap, obstacleImageDown, x, height + gap, "image"));  // Bottom obstacle with image
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].x += -1;
