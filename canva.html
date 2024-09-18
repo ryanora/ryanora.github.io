@@ -26,6 +26,13 @@ var playerImageUp;
 var playerImageDown;
 var obstacleImageUp;
 var obstacleImageDown;
+var powerUpImage;
+var powerUp;
+var powerUpActive = false;
+var powerUpEffect = null; // 'invincible'
+var effectStartTime;
+var nextPowerUpSpawn = 2000; // Frame number for the first power-up spawn
+var obstacleSpeed = -1; // Default obstacle speed
 
 function startGame() {
     // Load images
@@ -42,13 +49,16 @@ function startGame() {
     playerImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  // Replace with the down key pressed image URL
 
     obstacleImageUp = new Image();
-    obstacleImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark.png'; // Replace with top obstacle image URL
+    obstacleImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark2down.png'; // Replace with top obstacle image URL
 
     obstacleImageDown = new Image();
-    obstacleImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/sharkdown.png'; // Replace with bottom obstacle image URL
+    obstacleImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark2up.png'; // Replace with bottom obstacle image URL
+
+    powerUpImage = new Image();
+    powerUpImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/fishfood.png'; // Replace with power-up image URL
 
     // Ensure all images are loaded before starting the game
-    backgroundImage.onload = playerImage.onload = playerImageUp.onload = playerImageDown.onload = obstacleImageUp.onload = obstacleImageDown.onload = function() {
+    backgroundImage.onload = playerImage.onload = playerImageUp.onload = playerImageDown.onload = obstacleImageUp.onload = obstacleImageDown.onload = powerUpImage.onload = function() {
         initGame();
     };
 }
@@ -65,6 +75,11 @@ function initGame() {
         myGameArea.frameNo = 0;  // Reset frame number (score)
         gameOver = false;  // Reset game over state
         gamePaused = false;  // Ensure the game is not paused at start
+        powerUpActive = false;
+        powerUpEffect = null;
+        powerUp = null;
+        nextPowerUpSpawn = 2000; // Reset initial spawn frame number
+        obstacleSpeed = -1; // Reset obstacle speed to normal
         myGameArea.start();  // Start the game area
         gameStarted = true;
     }
@@ -93,6 +108,14 @@ var myGameArea = {
                 myGamePiece.image = playerImageDown;  // Change to down key image
                 e.preventDefault();  // Prevent scrolling with Arrow keys
             }
+            if (e.key === 'ArrowLeft') { 
+                myGamePiece.speedX = -2;  // Move left
+                e.preventDefault();  // Prevent default scrolling
+            }
+            if (e.key === 'ArrowRight') { 
+                myGamePiece.speedX = 2;  // Move right
+                e.preventDefault();  // Prevent default scrolling
+            }
         });
 
         window.addEventListener('keyup', function(e) {
@@ -100,6 +123,9 @@ var myGameArea = {
                 myGamePiece.gravity = 0.02;  // Reduced gravity when ArrowUp is released
                 myGamePiece.speedY = 0;  // Stop moving down
                 myGamePiece.image = playerImage;  // Revert to normal image
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                myGamePiece.speedX = 0;  // Stop moving left or right
             }
         });
     },
@@ -146,18 +172,24 @@ function gameObject(width, height, image, x, y, type) {
             ctx.fillStyle = "black";
             ctx.fillText(this.text, this.x, this.y);
         } else if (this.type == "image") {
-            ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+            // Maintain aspect ratio
+            var aspectRatio = this.image.width / this.image.height;
+            var drawWidth = this.height * aspectRatio;
+            this.width = drawWidth;  // Update width property for accurate collision
+            ctx.drawImage(this.image, this.x, this.y, drawWidth, this.height);
         }
     }
     this.newPos = function() {
         this.gravitySpeed += this.gravity;
         this.x += this.speedX;
         this.y += this.speedY + this.gravitySpeed;
-        this.hitEdges();  // Check for hitting the top or bottom edges
+        this.hitEdges();  // Check for hitting the top, bottom, left, or right edges
     }
     this.hitEdges = function() {
         var rockbottom = myGameArea.canvas.height - this.height;
         var ceiling = 0;  // Top of the canvas (invisible ceiling)
+        var leftEdge = 0;  // Left edge of the canvas
+        var rightEdge = myGameArea.canvas.width - this.width;  // Right edge of the canvas
 
         // Die when touching the bottom
         if (this.y > rockbottom) {
@@ -168,16 +200,26 @@ function gameObject(width, height, image, x, y, type) {
         if (this.y < ceiling) {
             myGameArea.stop();
         }
+
+        // Stop moving left or right at edges
+        if (this.x < leftEdge) {
+            this.x = leftEdge;
+        }
+        if (this.x > rightEdge) {
+            this.x = rightEdge;
+        }
     }
     this.crashWith = function(otherobj) {
-        var myleft = this.x;
-        var myright = this.x + (this.width);
-        var mytop = this.y;
-        var mybottom = this.y + (this.height);
-        var otherleft = otherobj.x;
-        var otherright = otherobj.x + (otherobj.width);
-        var othertop = otherobj.y;
-        var otherbottom = otherobj.y + (otherobj.height);
+        // Adjust hitbox to match the visual aspect better
+        var hitboxPadding = 5; // Fine-tune padding for a more accurate hitbox
+        var myleft = this.x + hitboxPadding;
+        var myright = this.x + this.width - hitboxPadding * 2;
+        var mytop = this.y + hitboxPadding;
+        var mybottom = this.y + this.height - hitboxPadding * 2;
+        var otherleft = otherobj.x + hitboxPadding;
+        var otherright = otherobj.x + otherobj.width - hitboxPadding * 2;
+        var othertop = otherobj.y + hitboxPadding;
+        var otherbottom = otherobj.y + otherobj.height - hitboxPadding * 2;
         var crash = true;
         if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
             crash = false;
@@ -186,12 +228,51 @@ function gameObject(width, height, image, x, y, type) {
     }
 }
 
+function spawnPowerUp() {
+    // Spawn power-up at a random location
+    var x = myGameArea.canvas.width; // Spawn at the right side
+    var y = Math.floor(Math.random() * (myGameArea.canvas.height - 40)) + 20;
+    powerUp = new gameObject(30, 30, powerUpImage, x, y, "image");
+    powerUpActive = true;
+    // Set next power-up spawn to a random interval between 300 to 600 frames after the current frame
+    nextPowerUpSpawn = myGameArea.frameNo + Math.floor(Math.random() * 300) + 300;
+}
+
+function applyPowerUpEffect() {
+    powerUpEffect = 'invincible';
+    effectStartTime = myGameArea.frameNo;
+
+    // Apply invincibility and moderate speed effect
+    myGamePiece.speedX = 1; // Slightly increase player speed
+    obstacleSpeed = -2; // Increase obstacle speed slightly
+    updateGameSpeed(15); // Slightly increase game speed
+}
+
+function updateGameSpeed(newInterval) {
+    clearInterval(myGameArea.interval);
+    myGameArea.interval = setInterval(updateGameArea, newInterval);
+}
+
 function updateGameArea() {
     if (gamePaused) return;  // Skip updating the game when paused
 
+    if (powerUpActive && powerUp.crashWith(myGamePiece)) {
+        // Player collects the power-up
+        applyPowerUpEffect();
+        powerUpActive = false;
+    }
+
+    // Handle power-up effects duration
+    if (powerUpEffect && myGameArea.frameNo - effectStartTime > 250) { // 5 seconds effect
+        powerUpEffect = null;
+        myGamePiece.speedX = 0; // Reset player speed
+        obstacleSpeed = -1; // Reset obstacle speed to normal
+        updateGameSpeed(20); // Reset game speed to normal
+    }
+
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     for (i = 0; i < myObstacles.length; i += 1) {
-        if (myGamePiece.crashWith(myObstacles[i])) {
+        if (powerUpEffect !== 'invincible' && myGamePiece.crashWith(myObstacles[i])) {
             myGameArea.stop();  // Stop the game when a collision happens
             return;
         } 
@@ -204,10 +285,22 @@ function updateGameArea() {
     }
 
     myGameArea.frameNo += 1;
+
+    // Spawn power-up when the frame number reaches the next spawn frame
+    if (myGameArea.frameNo >= nextPowerUpSpawn && !powerUpActive) {
+        spawnPowerUp();
+    }
+
+    // Move the power-up across the screen
+    if (powerUpActive) {
+        powerUp.x += obstacleSpeed; // Move with the same speed as obstacles
+        powerUp.update(); // Draw the power-up
+    }
+
     if (myGameArea.frameNo == 1 || everyinterval(150)) {
         x = myGameArea.canvas.width;
         minHeight = 20;
-        maxHeight = 200;
+        maxHeight = 150; // Reduced max height to make obstacles smaller
         height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
         minGap = 50;
         maxGap = 200;
@@ -217,7 +310,7 @@ function updateGameArea() {
         myObstacles.push(new gameObject(30, myGameArea.canvas.height - height - gap, obstacleImageDown, x, height + gap, "image"));  // Bottom obstacle with image
     }
     for (i = 0; i < myObstacles.length; i += 1) {
-        myObstacles[i].x += -1;
+        myObstacles[i].x += obstacleSpeed;
         myObstacles[i].update();
     }
     myScore.text = "SCORE: " + myGameArea.frameNo;
@@ -238,7 +331,7 @@ function everyinterval(n) {
 <!-- Start Game and Pause/Resume Button -->
 <button onclick="startGame()">Start Game</button>
 <button onclick="myGameArea.pause()">Pause/Resume</button>
-<p>Use the Up and Down Arrow Keys to Move!</p>
-<p>How long can you stay alive?</p>
+<p>Use the Up, Down, Left, and Right Arrow Keys to Move!</p>
+<p>Can you get Starry The Starfish across the ocean?</p>
 </body>
 </html>
