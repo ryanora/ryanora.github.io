@@ -35,7 +35,7 @@ var nextPowerUpSpawn = 2000; // Frame number for the first power-up spawn
 var obstacleSpeed = -1; // Default obstacle speed
 
 // Audio elements
-var moveSound;
+var backgroundMusic;
 var deathSound;
 
 function startGame() {
@@ -62,7 +62,8 @@ function startGame() {
     powerUpImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/fishfood.png'; // Replace with power-up image URL
 
     // Load audio files
-    moveSound = new Audio('wave_02_cc0-11505__transitking__wavesound.mp3'); // Replace with your move sound URL
+    backgroundMusic = new Audio('background_music.mp3'); // Replace with your background music URL
+    backgroundMusic.loop = true; // Set to loop
     deathSound = new Audio('8bit_bomb_explosion.mp3'); // Replace with your death sound URL
 
     // Ensure all images and sounds are loaded before starting the game
@@ -88,6 +89,8 @@ function initGame() {
         powerUp = null;
         nextPowerUpSpawn = 2000; // Reset initial spawn frame number
         obstacleSpeed = -1; // Reset obstacle speed to normal
+        
+        backgroundMusic.play();  // Start background music
         myGameArea.start();  // Start the game area
         gameStarted = true;
     }
@@ -109,23 +112,19 @@ var myGameArea = {
             if (e.key === 'ArrowUp') { 
                 myGamePiece.gravity = -0.1;  // Fly up with reduced gravity
                 myGamePiece.image = playerImageUp;  // Change to up key image
-                moveSound.play();  // Play move sound
                 e.preventDefault();  // Prevent scrolling with Arrow keys
             }
             if (e.key === 'ArrowDown') { 
                 myGamePiece.speedY = 1;  // Speed down with Down arrow
                 myGamePiece.image = playerImageDown;  // Change to down key image
-                moveSound.play();  // Play move sound
                 e.preventDefault();  // Prevent scrolling with Arrow keys
             }
             if (e.key === 'ArrowLeft') { 
                 myGamePiece.speedX = -2;  // Move left
-                moveSound.play();  // Play move sound
                 e.preventDefault();  // Prevent default scrolling
             }
             if (e.key === 'ArrowRight') { 
                 myGamePiece.speedX = 2;  // Move right
-                moveSound.play();  // Play move sound
                 e.preventDefault();  // Prevent default scrolling
             }
         });
@@ -147,6 +146,8 @@ var myGameArea = {
     stop : function() {
         clearInterval(this.interval);  // Stop the game loop
         gameOver = true;  // Set game over state
+        backgroundMusic.pause();  // Stop background music
+        backgroundMusic.currentTime = 0; // Reset music to start
         deathSound.play();  // Play death sound
         // Update the high score if the current score is greater
         if (myGameArea.frameNo > highScore) {
@@ -348,4 +349,3 @@ function everyinterval(n) {
 <p>Can you get Starry The Starfish across the ocean?</p>
 </body>
 </html>
-
