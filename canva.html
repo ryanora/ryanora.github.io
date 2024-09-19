@@ -12,33 +12,35 @@ canvas {
 <body>
 <script>
 
-var myGamePiece;
-var myObstacles = [];
-var myScore;
-var myHighScore;
-var highScore = 0;
-var gameStarted = false;
-var gameOver = false;
-var gamePaused = false;
-var backgroundImage;
-var playerImage;
-var playerImageUp;
-var playerImageDown;
-var obstacleImageUp;
-var obstacleImageDown;
-var powerUpImage;
-var powerUp;
-var powerUpActive = false;
-var powerUpEffect = null; // 'invincible'
-var effectStartTime;
+// Variables to hold game elements and states
+var myGamePiece; // Player character
+var myObstacles = []; // Array to hold obstacles
+var myScore; // Current score
+var myHighScore; // High score display
+var highScore = 0; // High score value
+var gameStarted = false; // Flag to check if the game has started
+var gameOver = false; // Flag to check if the game is over
+var gamePaused = false; // Flag to check if the game is paused
+var backgroundImage; // Background image
+var playerImage; // Default player image
+var playerImageUp; // Player image when moving up
+var playerImageDown; // Player image when moving down
+var obstacleImageUp; // Image for top obstacles
+var obstacleImageDown; // Image for bottom obstacles
+var powerUpImage; // Image for the power-up
+var powerUp; // Power-up object
+var powerUpActive = false; // Flag to check if power-up is active
+var powerUpEffect = null; // 'invincible' power-up effect
+var effectStartTime; // Frame number when the power-up effect starts
 var nextPowerUpSpawn = 2000; // Frame number for the first power-up spawn
-var obstacleSpeed = -1; // Default obstacle speed
+var obstacleSpeed = -1; // Default speed of obstacles
 
 // Audio elements
-var backgroundMusic;
-var deathSound;
-var powerUpSound;
+var backgroundMusic; // Background music
+var deathSound; // Sound when the player dies
+var powerUpSound; // Sound when player collects power-up
 
+// Function to start the game
 function startGame() {
     // Load images
     backgroundImage = new Image();
@@ -74,6 +76,7 @@ function startGame() {
     };
 }
 
+// Function to initialize the game
 function initGame() {
     // Reset all variables if the game is restarting
     if (!gameStarted || gameOver) {
@@ -98,6 +101,7 @@ function initGame() {
     }
 }
 
+// Object to manage the game area (canvas)
 var myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
@@ -106,7 +110,7 @@ var myGameArea = {
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
-        this.interval = setInterval(updateGameArea, 20);
+        this.interval = setInterval(updateGameArea, 20); // Call updateGameArea every 20ms
 
         // Add event listeners for keyboard controls
         window.addEventListener('keydown', function(e) {
@@ -167,6 +171,7 @@ var myGameArea = {
     }
 }
 
+// Constructor function for creating game objects (player, obstacles, etc.)
 function gameObject(width, height, image, x, y, type) {
     this.type = type;
     this.width = width;
@@ -181,6 +186,7 @@ function gameObject(width, height, image, x, y, type) {
     // Set the initial image for the player or obstacle
     this.image = image;
 
+    // Method to update the object's position and appearance
     this.update = function() {
         ctx = myGameArea.context;
         if (this.type == "text") {
@@ -244,6 +250,7 @@ function gameObject(width, height, image, x, y, type) {
     }
 }
 
+// Function to spawn a power-up
 function spawnPowerUp() {
     // Spawn power-up at a random location
     var x = myGameArea.canvas.width; // Spawn at the right side
@@ -254,6 +261,7 @@ function spawnPowerUp() {
     nextPowerUpSpawn = myGameArea.frameNo + Math.floor(Math.random() * 300) + 300;
 }
 
+// Function to apply the power-up effect
 function applyPowerUpEffect() {
     powerUpEffect = 'invincible';
     effectStartTime = myGameArea.frameNo;
@@ -267,11 +275,13 @@ function applyPowerUpEffect() {
     updateGameSpeed(15); // Slightly increase game speed
 }
 
+// Function to update the game speed
 function updateGameSpeed(newInterval) {
     clearInterval(myGameArea.interval);
     myGameArea.interval = setInterval(updateGameArea, newInterval);
 }
 
+// Main function to update the game area
 function updateGameArea() {
     if (gamePaused) return;  // Skip updating the game when paused
 
@@ -340,6 +350,7 @@ function updateGameArea() {
     myGamePiece.update();
 }
 
+// Function to check if a certain interval has passed
 function everyinterval(n) {
     if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
     return false;
