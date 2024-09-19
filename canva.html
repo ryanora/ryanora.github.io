@@ -44,31 +44,31 @@ var powerUpSound; // Sound when player collects power-up
 function startGame() {
     // Load images
     backgroundImage = new Image();
-    backgroundImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/9543592_4207840.jpg'; // Replace with your background image URL
+    backgroundImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/9543592_4207840.jpg'; //background image
 
     playerImage = new Image();
-    playerImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/starfish-animal-tropical.png';  // Replace with the original player image URL
+    playerImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/starfish-animal-tropical.png';  //player image 
 
     playerImageUp = new Image();
-    playerImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  // Replace with the up key pressed image URL
+    playerImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  //up key pressed image
 
     playerImageDown = new Image();
-    playerImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  // Replace with the down key pressed image URL
+    playerImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/Design%20(2)-fotor-bg-remover-20240917231035.png';  //down key pressed image
 
     obstacleImageUp = new Image();
-    obstacleImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark2down.png'; // Replace with top obstacle image URL
+    obstacleImageUp.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark2down.png'; //top obstacle image
 
     obstacleImageDown = new Image();
-    obstacleImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark2up.png'; // Replace with bottom obstacle image URL
+    obstacleImageDown.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/shark2up.png'; //bottom obstacle image
 
     powerUpImage = new Image();
-    powerUpImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/fishfood.png'; // Replace with power-up image URL
+    powerUpImage.src = 'https://assets.onecompiler.app/42sg3qkav/42sh4rccu/fishfood.png'; //power-up image
 
     // Load audio files
-    backgroundMusic = new Audio('happy.mp3'); // Replace with your background music URL
+    backgroundMusic = new Audio('happy.mp3'); //background music
     backgroundMusic.loop = true; // Set to loop
-    deathSound = new Audio('8bit_bomb_explosion.mp3'); // Replace with your death sound URL
-    powerUpSound = new Audio('magical_3.mp3'); // Replace with your power-up sound URL
+    deathSound = new Audio('8bit_bomb_explosion.mp3'); //death sound
+    powerUpSound = new Audio('magical_3.mp3'); //power-up sound
 
     // Ensure all images and sounds are loaded before starting the game
     backgroundImage.onload = playerImage.onload = playerImageUp.onload = playerImageDown.onload = obstacleImageUp.onload = obstacleImageDown.onload = powerUpImage.onload = function() {
