@@ -127,10 +127,12 @@ var myGameArea = {
             }
             if (e.key === 'ArrowLeft') { 
                 myGamePiece.speedX = -2;  // Move left
+                myGamePiece.image = playerImageDown;
                 e.preventDefault();  // Prevent default scrolling
             }
             if (e.key === 'ArrowRight') { 
                 myGamePiece.speedX = 2;  // Move right
+                myGamePiece.image = playerImageDown;
                 e.preventDefault();  // Prevent default scrolling
             }
         });
