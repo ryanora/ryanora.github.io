@@ -1,149 +1,133 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>React without JSX</title>
+  <title>Chessboard with Piece Images</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
 </head>
-
 <body>
   <div id="root"></div>
 
   <script type="text/babel" data-presets="react,stage-3">
-  
-    function Square({ value, onSquareClick }) {
-  return (
-    <button className="square" onClick={onSquareClick}>
-      {value}
-    </button>
-  );
-}
+    // Model: Starting state of the chessboard in 2D array
+    const initialGameState = [
+      ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+      ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+      ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+    ];
 
-function Board({ xIsNext, squares, onPlay }) {
-  function handleClick(i) {
-    if (calculateWinner(squares) || squares[i]) {
-      return;
+    // Mapping of chess pieces to their respective image URLs
+    const pieceImages = {
+      'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+      'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+      'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+      'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+      'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+      'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+      'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+      'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+      'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+      'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+      'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+      'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
+    };
+
+    function Game() {
+      const [game, setGame] = React.useState(initialGameState);
+      const [selectedSquare, setSelectedSquare] = React.useState(null);
+      
+      const [step, setStep] = React.useState(0);
+      
+      // Handle square click for moving pieces
+      function handleClick(row, col) {
+        
+        setStep(step+1);
+        
+        if (selectedSquare) {
+          const newGame = game.map(row => row.slice());
+          const [selectedRow, selectedCol] = selectedSquare;
+
+          // Move the piece to the new location
+          newGame[row][col] = newGame[selectedRow][selectedCol];
+          newGame[selectedRow][selectedCol] = '';
+          setGame(newGame);
+          setSelectedSquare(null);
+        } else {
+          if (game[row][col]) {
+            setSelectedSquare([row, col]);
+          }
+        }
+      }
+
+      return (
+        <div>
+          <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} stepl={step}/>
+        </div>
+      );
     }
-    const nextSquares = squares.slice();
-    if (xIsNext) {
-      nextSquares[i] = 'X';
-    } else {
-      nextSquares[i] = 'O';
+
+    // View: Board and buttons reflecting the game state
+    function Board({ game, onSquareClick, selectedSquare, stepl }) {
+      return (
+        <div>
+          
+          <button> {stepl}  </button>
+          
+          {game.map((row, rowIndex) => (
+            <div key={rowIndex} style={{ display: 'flex' }}>
+              {row.map((value, colIndex) => (
+                <Square
+                  key={colIndex}
+                  value={value}
+                  onClick={() => onSquareClick(rowIndex, colIndex)}
+                  isLight={(rowIndex + colIndex) % 2 === 0}
+                  isSelected={selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      );
     }
-    onPlay(nextSquares);
-  }
 
-  const winner = calculateWinner(squares);
-  let status;
-  if (winner) {
-    status = 'Winner: ' + winner;
-  } else {
-    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
-  }
+    function Square({ value, onClick, isLight, isSelected }) {
+      const squareStyle = {
+        width: '80px',
+        height: '80px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        cursor: 'pointer',
+        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#f0d9b5' : '#b58863'),
+        border: '1px solid #999'
+      };
 
-  return (
-    <>
-      <div className="status">{status}</div>
-      <div className="board-row">
-        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
-      </div>
-    </>
-  );
-}
+      // Display the piece image or an empty square
+      const pieceDisplay = () => {
+        if (value) {
+          return <img src={pieceImages[value]} alt={value} style={{ width: '70px', height: '70px' }} />;
+        }
+        return null;
+      };
 
- function Game() {
-  const [history, setHistory] = React.useState([Array(9).fill(null)]);
-  const [currentMove, setCurrentMove] = React.useState(0);
-  const xIsNext = currentMove % 2 === 0;
-  const currentSquares = history[currentMove];
-
-  function handlePlay(nextSquares) {
-    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
-    setHistory(nextHistory);
-    setCurrentMove(nextHistory.length - 1);
-  }
-
-  function jumpTo(nextMove) {
-    setCurrentMove(nextMove);
-  }
-
-  const moves = history.map((squares, move) => {
-    let description;
-    if (move > 0) {
-      description = 'Go to move #' + move;
-    } else {
-      description = 'Go to game start';
+      return (
+        <button style={squareStyle} onClick={onClick}>
+          {pieceDisplay()}
+        </button>
+      );
     }
-    return (
-      <li key={move}>
-        <button onClick={() => jumpTo(move)}>{description}</button>
-      </li>
-    );
-  });
 
-  return (
-    <div className="game">
-      <div className="game-board">
-        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
-      </div>
-      <div className="game-info">
-        <ol>{moves}</ol>
-      </div>
-    </div>
-  );
-}
-
-function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
-    }
-  }
-  return null;
-}
-
-
-      const Example = () => {
-         return React.createElement("div", null, "Hello, React!");
-     };
-
-    
-    //ReactDOM.render(React.createElement(Example), document.getElementById("root"));
-    
-     //ReactDOM.createRoot(<Game />, document.getElementById("root"));
-
-    const root = ReactDOM.createRoot(document.getElementById("root"))
+    const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(<Game />);
-    
   </script>
 </body>
-
 </html>
