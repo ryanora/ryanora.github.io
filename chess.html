@@ -8,6 +8,41 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #ececec;
+    }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 80px);
+      grid-template-rows: repeat(8, 80px);
+      gap: 0;
+    }
+    .hud {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      width: 680px;
+    }
+    .btn-container {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>
@@ -44,7 +79,9 @@
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isGameOver, setIsGameOver] = React.useState(false);
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true); // Track turns
+      const [message, setMessage] = React.useState("Welcome to Chess!");
 
+      // Handle square clicks for piece selection and movement
       function handleClick(row, col) {
         if (isGameOver) return;
 
@@ -53,29 +90,25 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          // Ensure that it is the correct player's turn
           if ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase())) {
-            // Check if the move is valid
             if (isValidMove(piece, selectedRow, selectedCol, row, col, game)) {
               const newGame = game.map(r => r.slice());
               newGame[row][col] = piece;
               newGame[selectedRow][selectedCol] = '';
 
-              // Check if a king is captured
               if (target.toLowerCase() === 'k') {
                 setIsGameOver(true);
-                alert(`Game Over! ${piece === piece.toUpperCase() ? 'White' : 'Black'} wins!`);
+                setMessage(`Game Over! ${piece === piece.toUpperCase() ? 'White' : 'Black'} wins!`);
               } else {
                 setGame(newGame);
-                setIsWhiteTurn(!isWhiteTurn); // Toggle turn
+                setIsWhiteTurn(!isWhiteTurn);
                 setSelectedSquare(null);
+                setMessage(`Turn: ${!isWhiteTurn ? 'White' : 'Black'}`);
               }
             } else {
-              alert("Invalid move. Try again.");
-              setSelectedSquare([row, col]); // Allow reselection of piece
+              setMessage("Invalid move! Try again.");
+              setSelectedSquare([row, col]);
             }
-          } else {
-            alert("It's not your turn.");
           }
         } else {
           if (game[row][col] && ((isWhiteTurn && game[row][col] === game[row][col].toUpperCase()) || (!isWhiteTurn && game[row][col] === game[row][col].toLowerCase()))) {
@@ -88,42 +121,61 @@
         const rowDiff = endRow - startRow;
         const colDiff = endCol - startCol;
         switch (piece.toLowerCase()) {
-          case 'p': // Pawn
+          case 'p':
             return isValidPawnMove(piece, startRow, startCol, endRow, endCol, board);
-          case 'r': // Rook
-            return rowDiff === 0 || colDiff === 0; // Rooks move horizontally or vertically
-          case 'n': // Knight
+          case 'r':
+            return rowDiff === 0 || colDiff === 0;
+          case 'n':
             return Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1 || Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2;
-          case 'b': // Bishop
-            return Math.abs(rowDiff) === Math.abs(colDiff); // Bishops move diagonally
-          case 'q': // Queen
-            return rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff); // Queens move like rooks and bishops
-          case 'k': // King
-            return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1; // Kings move one square in any direction
+          case 'b':
+            return Math.abs(rowDiff) === Math.abs(colDiff);
+          case 'q':
+            return rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff);
+          case 'k':
+            return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
           default:
             return false;
         }
       }
 
       function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
-        const direction = piece === 'P' ? -1 : 1; // White pawns move up (-1), black down (+1)
+        const direction = piece === 'P' ? -1 : 1;
         const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
         if (startCol === endCol) {
           if (endRow === startRow + direction) {
-            return board[endRow][endCol] === ''; // Move forward one square
+            return board[endRow][endCol] === '';
           }
           if (isStartingRow && endRow === startRow + 2 * direction) {
-            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === ''; // Move forward two squares
+            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === '';
           }
         } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
-          return board[endRow][endCol] !== '' && board[endRow][endCol] !== piece; // Capture diagonally
+          return board[endRow][endCol] !== '' && board[endRow][endCol] !== piece;
         }
         return false;
       }
 
+      function startGame() {
+        setGame(initialGameState);
+        setIsGameOver(false);
+        setIsWhiteTurn(true);
+        setSelectedSquare(null);
+        setMessage("Game Started! Turn: White");
+      }
+
+      function endItAll() {
+        setIsGameOver(true);
+        setMessage(`Game Over! ${isWhiteTurn ? 'Black' : 'White'} wins by default!`);
+      }
+
       return (
-        <div>
-          <h3>{isGameOver ? 'Game Over' : `Turn: ${isWhiteTurn ? 'White' : 'Black'}`}</h3>
+        <div id="game-container">
+          <div className="hud">
+            <h3>{message}</h3>
+            <div className="btn-container">
+              <button onClick={startGame}>Start New Game</button>
+              <button onClick={endItAll}>End It All</button>
+            </div>
+          </div>
           <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
         </div>
       );
@@ -131,19 +183,17 @@
 
     function Board({ game, onSquareClick, selectedSquare }) {
       return (
-        <div>
+        <div id="board">
           {game.map((row, rowIndex) => (
-            <div key={rowIndex} style={{ display: 'flex' }}>
-              {row.map((value, colIndex) => (
-                <Square
-                  key={colIndex}
-                  value={value}
-                  onClick={() => onSquareClick(rowIndex, colIndex)}
-                  isLight={(rowIndex + colIndex) % 2 === 0}
-                  isSelected={selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex}
-                />
-              ))}
-            </div>
+            row.map((value, colIndex) => (
+              <Square
+                key={`${rowIndex}-${colIndex}`}
+                value={value}
+                onClick={() => onSquareClick(rowIndex, colIndex)}
+                isLight={(rowIndex + colIndex) % 2 === 0}
+                isSelected={selectedSquare && selectedSquare[0] === rowIndex && selectedSquare[1] === colIndex}
+              />
+            ))
           ))}
         </div>
       );
@@ -151,26 +201,18 @@
 
     function Square({ value, onClick, isLight, isSelected }) {
       const squareStyle = {
-        width: '80px',
-        height: '80px',
+        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#f0d9b5' : '#b58863'),
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        cursor: 'pointer',
-        backgroundColor: isSelected ? '#ffeb3b' : (isLight ? '#f0d9b5' : '#b58863'),
-        border: '1px solid #999'
-      };
-
-      const pieceDisplay = () => {
-        if (value) {
-          return <img src={pieceImages[value]} alt={value} style={{ width: '70px', height: '70px' }} />;
-        }
-        return null;
+        border: '1px solid #999',
+        width: '80px',
+        height: '80px'
       };
 
       return (
         <button style={squareStyle} onClick={onClick}>
-          {pieceDisplay()}
+          {value ? <img src={pieceImages[value]} alt={value} style={{ width: '70px', height: '70px' }} /> : null}
         </button>
       );
     }
@@ -180,3 +222,4 @@
   </script>
 </body>
 </html>
+     
