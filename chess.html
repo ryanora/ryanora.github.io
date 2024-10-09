@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chessboard with Piece Images</title>
+  <title>Chessboard with Piece Images and Text-to-Speech</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -74,11 +74,17 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
+    // Function for text-to-speech
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      speechSynthesis.speak(utterance);
+    }
+
     function Game() {
       const [game, setGame] = React.useState(initialGameState);
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isGameOver, setIsGameOver] = React.useState(false);
-      const [isWhiteTurn, setIsWhiteTurn] = React.useState(true); // Track turns
+      const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [message, setMessage] = React.useState("Welcome to Chess!");
 
       // Handle square clicks for piece selection and movement
@@ -98,7 +104,10 @@
 
               if (target.toLowerCase() === 'k') {
                 setIsGameOver(true);
-                setMessage(`Game Over! ${piece === piece.toUpperCase() ? 'White' : 'Black'} wins!`);
+                const winner = piece === piece.toUpperCase() ? 'White' : 'Black';
+                const announcement = `Game Over! ${winner} wins!`;
+                setMessage(announcement);
+                speak(announcement);
               } else {
                 setGame(newGame);
                 setIsWhiteTurn(!isWhiteTurn);
@@ -160,11 +169,15 @@
         setIsWhiteTurn(true);
         setSelectedSquare(null);
         setMessage("Game Started! Turn: White");
+        speak("Welcome to Chess! The game has started. White moves first.");
       }
 
       function endItAll() {
         setIsGameOver(true);
-        setMessage(`Game Over! ${isWhiteTurn ? 'Black' : 'White'} wins by default!`);
+        const winner = isWhiteTurn ? 'Black' : 'White';
+        const message = `Game Over! ${winner} wins by default!`;
+        setMessage(message);
+        speak(message);
       }
 
       return (
@@ -222,4 +235,3 @@
   </script>
 </body>
 </html>
-     
