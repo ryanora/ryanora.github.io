@@ -43,56 +43,88 @@
       const [game, setGame] = React.useState(initialGameState);
       const [selectedSquare, setSelectedSquare] = React.useState(null);
       const [isGameOver, setIsGameOver] = React.useState(false);
+      const [isWhiteTurn, setIsWhiteTurn] = React.useState(true); // Track turns
 
-      // Function to handle square click for selecting and moving pieces
       function handleClick(row, col) {
-        if (isGameOver) return; // No moves allowed if game is over
+        if (isGameOver) return;
 
         if (selectedSquare) {
           const [selectedRow, selectedCol] = selectedSquare;
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          // Only allow moves if the target square is empty or contains an opponent's piece
-          if (piece && (target === '' || isOpponentPiece(piece, target))) {
-            const newGame = game.map(r => r.slice());
+          // Ensure that it is the correct player's turn
+          if ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase())) {
+            // Check if the move is valid
+            if (isValidMove(piece, selectedRow, selectedCol, row, col, game)) {
+              const newGame = game.map(r => r.slice());
+              newGame[row][col] = piece;
+              newGame[selectedRow][selectedCol] = '';
 
-            // Move the piece and clear the old square
-            newGame[row][col] = piece;
-            newGame[selectedRow][selectedCol] = '';
-
-            // Check if a king is captured
-            if (target.toLowerCase() === 'k') {
-              setIsGameOver(true);
-              alert(`Game Over! ${piece === piece.toUpperCase() ? 'White' : 'Black'} wins!`);
+              // Check if a king is captured
+              if (target.toLowerCase() === 'k') {
+                setIsGameOver(true);
+                alert(`Game Over! ${piece === piece.toUpperCase() ? 'White' : 'Black'} wins!`);
+              } else {
+                setGame(newGame);
+                setIsWhiteTurn(!isWhiteTurn); // Toggle turn
+                setSelectedSquare(null);
+              }
+            } else {
+              alert("Invalid move. Try again.");
+              setSelectedSquare([row, col]); // Allow reselection of piece
             }
-
-            setGame(newGame);
-            setSelectedSquare(null);
           } else {
-            setSelectedSquare([row, col]); // Reselect square if the move is invalid
+            alert("It's not your turn.");
           }
         } else {
-          // Select the square if it has a piece
-          if (game[row][col]) {
+          if (game[row][col] && ((isWhiteTurn && game[row][col] === game[row][col].toUpperCase()) || (!isWhiteTurn && game[row][col] === game[row][col].toLowerCase()))) {
             setSelectedSquare([row, col]);
           }
         }
       }
 
-      // Utility function to check if a piece belongs to the opponent
-      function isOpponentPiece(piece, target) {
-        return (piece === piece.toUpperCase() && target === target.toLowerCase()) ||
-               (piece === piece.toLowerCase() && target === target.toUpperCase());
+      function isValidMove(piece, startRow, startCol, endRow, endCol, board) {
+        const rowDiff = endRow - startRow;
+        const colDiff = endCol - startCol;
+        switch (piece.toLowerCase()) {
+          case 'p': // Pawn
+            return isValidPawnMove(piece, startRow, startCol, endRow, endCol, board);
+          case 'r': // Rook
+            return rowDiff === 0 || colDiff === 0; // Rooks move horizontally or vertically
+          case 'n': // Knight
+            return Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1 || Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2;
+          case 'b': // Bishop
+            return Math.abs(rowDiff) === Math.abs(colDiff); // Bishops move diagonally
+          case 'q': // Queen
+            return rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff); // Queens move like rooks and bishops
+          case 'k': // King
+            return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1; // Kings move one square in any direction
+          default:
+            return false;
+        }
+      }
+
+      function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
+        const direction = piece === 'P' ? -1 : 1; // White pawns move up (-1), black down (+1)
+        const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
+        if (startCol === endCol) {
+          if (endRow === startRow + direction) {
+            return board[endRow][endCol] === ''; // Move forward one square
+          }
+          if (isStartingRow && endRow === startRow + 2 * direction) {
+            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === ''; // Move forward two squares
+          }
+        } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
+          return board[endRow][endCol] !== '' && board[endRow][endCol] !== piece; // Capture diagonally
+        }
+        return false;
       }
 
       return (
         <div>
-          {isGameOver ? (
-            <h2>Game Over</h2>
-          ) : (
-            <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
-          )}
+          <h3>{isGameOver ? 'Game Over' : `Turn: ${isWhiteTurn ? 'White' : 'Black'}`}</h3>
+          <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
         </div>
       );
     }
