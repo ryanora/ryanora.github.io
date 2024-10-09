@@ -13,7 +13,6 @@
   <div id="root"></div>
 
   <script type="text/babel" data-presets="react,stage-3">
-    // Model: Starting state of the chessboard in 2D array
     const initialGameState = [
       ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
       ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -25,7 +24,6 @@
       ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
 
-    // Mapping of chess pieces to their respective image URLs
     const pieceImages = {
       'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
       'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
@@ -44,44 +42,64 @@
     function Game() {
       const [game, setGame] = React.useState(initialGameState);
       const [selectedSquare, setSelectedSquare] = React.useState(null);
-      
-      const [step, setStep] = React.useState(0);
-      
-      // Handle square click for moving pieces
-      function handleClick(row, col) {
-        
-        setStep(step+1);
-        
-        if (selectedSquare) {
-          const newGame = game.map(row => row.slice());
-          const [selectedRow, selectedCol] = selectedSquare;
+      const [isGameOver, setIsGameOver] = React.useState(false);
 
-          // Move the piece to the new location
-          newGame[row][col] = newGame[selectedRow][selectedCol];
-          newGame[selectedRow][selectedCol] = '';
-          setGame(newGame);
-          setSelectedSquare(null);
+      // Function to handle square click for selecting and moving pieces
+      function handleClick(row, col) {
+        if (isGameOver) return; // No moves allowed if game is over
+
+        if (selectedSquare) {
+          const [selectedRow, selectedCol] = selectedSquare;
+          const piece = game[selectedRow][selectedCol];
+          const target = game[row][col];
+
+          // Only allow moves if the target square is empty or contains an opponent's piece
+          if (piece && (target === '' || isOpponentPiece(piece, target))) {
+            const newGame = game.map(r => r.slice());
+
+            // Move the piece and clear the old square
+            newGame[row][col] = piece;
+            newGame[selectedRow][selectedCol] = '';
+
+            // Check if a king is captured
+            if (target.toLowerCase() === 'k') {
+              setIsGameOver(true);
+              alert(`Game Over! ${piece === piece.toUpperCase() ? 'White' : 'Black'} wins!`);
+            }
+
+            setGame(newGame);
+            setSelectedSquare(null);
+          } else {
+            setSelectedSquare([row, col]); // Reselect square if the move is invalid
+          }
         } else {
+          // Select the square if it has a piece
           if (game[row][col]) {
             setSelectedSquare([row, col]);
           }
         }
       }
 
+      // Utility function to check if a piece belongs to the opponent
+      function isOpponentPiece(piece, target) {
+        return (piece === piece.toUpperCase() && target === target.toLowerCase()) ||
+               (piece === piece.toLowerCase() && target === target.toUpperCase());
+      }
+
       return (
         <div>
-          <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} stepl={step}/>
+          {isGameOver ? (
+            <h2>Game Over</h2>
+          ) : (
+            <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
+          )}
         </div>
       );
     }
 
-    // View: Board and buttons reflecting the game state
-    function Board({ game, onSquareClick, selectedSquare, stepl }) {
+    function Board({ game, onSquareClick, selectedSquare }) {
       return (
         <div>
-          
-          <button> {stepl}  </button>
-          
           {game.map((row, rowIndex) => (
             <div key={rowIndex} style={{ display: 'flex' }}>
               {row.map((value, colIndex) => (
@@ -111,7 +129,6 @@
         border: '1px solid #999'
       };
 
-      // Display the piece image or an empty square
       const pieceDisplay = () => {
         if (value) {
           return <img src={pieceImages[value]} alt={value} style={{ width: '70px', height: '70px' }} />;
