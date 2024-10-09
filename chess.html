@@ -96,13 +96,15 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          if ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase())) {
+          // Check if capturing an opponent's piece
+          if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
             if (isValidMove(piece, selectedRow, selectedCol, row, col, game)) {
+              // Clone the game state to avoid direct mutations
               const newGame = game.map(r => r.slice());
               newGame[row][col] = piece;
               newGame[selectedRow][selectedCol] = '';
 
-              if (target.toLowerCase() === 'k') {
+              if (target && target.toLowerCase() === 'k') {
                 setIsGameOver(true);
                 const winner = piece === piece.toUpperCase() ? 'White' : 'Black';
                 const announcement = `Game Over! ${winner} wins!`;
@@ -116,7 +118,7 @@
               }
             } else {
               setMessage("Invalid move! Try again.");
-              setSelectedSquare([row, col]);
+              setSelectedSquare(null);
             }
           }
         } else {
