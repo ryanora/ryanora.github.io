@@ -89,44 +89,45 @@
 
       // Handle square clicks for piece selection and movement
       function handleClick(row, col) {
-  if (isGameOver) return;
+        if (isGameOver) return;
 
-  if (selectedSquare) {
-    const [selectedRow, selectedCol] = selectedSquare;
-    const piece = game[selectedRow][selectedCol];
-    const target = game[row][col];
+        if (selectedSquare) {
+          const [selectedRow, selectedCol] = selectedSquare;
+          const piece = game[selectedRow][selectedCol];
+          const target = game[row][col];
 
-    // Check if capturing an opponent's piece or moving to an empty square
-   if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-      if (isValidMove(piece, selectedRow, selectedCol, row, col, game) && (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))) {
-        // Clone the game state to avoid direct mutations
-        const newGame = game.map(r => r.slice());
-        newGame[row][col] = piece;
-        newGame[selectedRow][selectedCol] = '';
+          // Check if capturing an opponent's piece or moving to an empty square
+          if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+            if (isValidMove(piece, selectedRow, selectedCol, row, col, game) && (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))) {
+              // Clone the game state to avoid direct mutations
+              const newGame = game.map(r => r.slice());
+              newGame[row][col] = piece;
+              newGame[selectedRow][selectedCol] = '';
 
-        if (target && target.toLowerCase() === 'k') {
-          setIsGameOver(true);
-          const winner = piece === piece.toUpperCase() ? 'White' : 'Black';
-          const announcement = `Game Over! ${winner} wins!`;
-          setMessage(announcement);
-          speak(announcement);
+              if (target && target.toLowerCase() === 'k') {
+                setIsGameOver(true);
+                const winner = piece === piece.toUpperCase() ? 'White' : 'Black';
+                const announcement = `Game Over! ${winner} wins!`;
+                setMessage(announcement);
+                speak(announcement);
+              } else {
+                setGame(newGame);
+                setIsWhiteTurn(!isWhiteTurn);
+                setSelectedSquare(null);
+                setMessage(`Turn: ${!isWhiteTurn ? 'White' : 'Black'}`);
+              }
+            } else {
+              setMessage("Invalid move! Try again.");
+              setSelectedSquare(null);
+            }
+          }
         } else {
-          setGame(newGame);
-          setIsWhiteTurn(!isWhiteTurn);
-          setSelectedSquare(null);
-          setMessage(`Turn: ${!isWhiteTurn ? 'White' : 'Black'}`);
+          if (game[row][col] && ((isWhiteTurn && game[row][col] === game[row][col].toUpperCase()) || (!isWhiteTurn && game[row][col] === game[row][col].toLowerCase()))) {
+            setSelectedSquare([row, col]);
+          }
         }
-      } else {
-        setMessage("Invalid move! Try again.");
-        setSelectedSquare(null);
       }
-    }
-  } else {
-    if (game[row][col] && ((isWhiteTurn && game[row][col] === game[row][col].toUpperCase()) || (!isWhiteTurn && game[row][col] === game[row][col].toLowerCase()))) {
-      setSelectedSquare([row, col]);
-    }
-  }
-}
+
       function isValidMove(piece, startRow, startCol, endRow, endCol, board) {
         const rowDiff = endRow - startRow;
         const colDiff = endCol - startCol;
@@ -136,7 +137,7 @@
           case 'r':
             return rowDiff === 0 || colDiff === 0;
           case 'n':
-            return Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1 || Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2;
+            return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
           case 'b':
             return Math.abs(rowDiff) === Math.abs(colDiff);
           case 'q':
@@ -176,7 +177,7 @@
       function endItAll() {
         setIsGameOver(true);
         const winner = isWhiteTurn ? 'Black' : 'White';
-        const message = Game Over! ${winner} wins by default!;
+        const message = `Game Over! ${winner} wins by default!`;
         setMessage(message);
         speak(message);
       }
@@ -201,7 +202,7 @@
           {game.map((row, rowIndex) => (
             row.map((value, colIndex) => (
               <Square
-                key={${rowIndex}-${colIndex}}
+                key={`${rowIndex}-${colIndex}`}
                 value={value}
                 onClick={() => onSquareClick(rowIndex, colIndex)}
                 isLight={(rowIndex + colIndex) % 2 === 0}
