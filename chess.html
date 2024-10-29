@@ -87,7 +87,6 @@
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [message, setMessage] = React.useState("Welcome to Chess!");
 
-      // Handle square clicks for piece selection and movement
       function handleClick(row, col) {
         if (isGameOver) return;
 
@@ -96,7 +95,9 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
+          // Ensure selected piece is on the current player's turn
           if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
+            // Check if the move is valid and captures an opponent piece or moves to an empty square
             if (isValidMove(piece, selectedRow, selectedCol, row, col, game) && (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))) {
               const newGame = game.map(r => r.slice());
               newGame[row][col] = piece;
@@ -133,18 +134,32 @@
           case 'p':
             return isValidPawnMove(piece, startRow, startCol, endRow, endCol, board);
           case 'r':
-            return rowDiff === 0 || colDiff === 0;
+            return (rowDiff === 0 || colDiff === 0) && clearPath(startRow, startCol, endRow, endCol, board);
           case 'n':
             return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
           case 'b':
-            return Math.abs(rowDiff) === Math.abs(colDiff);
+            return Math.abs(rowDiff) === Math.abs(colDiff) && clearPath(startRow, startCol, endRow, endCol, board);
           case 'q':
-            return rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff);
+            return (rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff)) && clearPath(startRow, startCol, endRow, endCol, board);
           case 'k':
             return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
           default:
             return false;
         }
+      }
+
+      function clearPath(startRow, startCol, endRow, endCol, board) {
+        const rowStep = Math.sign(endRow - startRow);
+        const colStep = Math.sign(endCol - startCol);
+        let currentRow = startRow + rowStep;
+        let currentCol = startCol + colStep;
+
+        while (currentRow !== endRow || currentCol !== endCol) {
+          if (board[currentRow][currentCol] !== '') return false;
+          currentRow += rowStep;
+          currentCol += colStep;
+        }
+        return true;
       }
 
       function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
