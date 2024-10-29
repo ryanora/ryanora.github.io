@@ -150,19 +150,26 @@
       }
 
       function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
-        const direction = piece === 'P' ? -1 : 1;
-        const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
-        if (startCol === endCol) {
-          if (endRow === startRow + direction) {
-            return board[endRow][endCol] === '';
-          }
-          if (isStartingRow && endRow === startRow + 2 * direction) {
-            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === '';
-          }
-        } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
-          return board[endRow][endCol] !== '' && board[endRow][endCol] !== piece;
+      const direction = piece === 'P' ? -1 : 1;
+      const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
+    
+      // Move forward
+      if (startCol === endCol) {
+        if (endRow === startRow + direction) {
+          return board[endRow][endCol] === ''; // move one square forward if empty
         }
-        return false;
+        if (isStartingRow && endRow === startRow + 2 * direction) {
+          return board[startRow + direction][startCol] === '' && board[endRow][endCol] === ''; // move two squares forward if both empty
+        }
+      } 
+      // Capture diagonally
+      else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
+        const target = board[endRow][endCol];
+        return target !== '' && (piece === 'P' ? target === target.toLowerCase() : target === target.toUpperCase()); // capture only opponent piece
+      }
+    
+      return false;
+    }
       }
 
       function startGame() {
