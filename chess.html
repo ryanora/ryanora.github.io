@@ -96,10 +96,8 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          // Check if capturing an opponent's piece or moving to an empty square
           if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
             if (isValidMove(piece, selectedRow, selectedCol, row, col, game) && (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))) {
-              // Clone the game state to avoid direct mutations
               const newGame = game.map(r => r.slice());
               newGame[row][col] = piece;
               newGame[selectedRow][selectedCol] = '';
@@ -152,24 +150,20 @@
       function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
         const direction = piece === 'P' ? -1 : 1;
         const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
-    
-      // Move forward
-      if (startCol === endCol) {
-        if (endRow === startRow + direction) {
-          return board[endRow][endCol] === ''; // move one square forward if empty
+
+        if (startCol === endCol) {
+          if (endRow === startRow + direction) {
+            return board[endRow][endCol] === '';
+          }
+          if (isStartingRow && endRow === startRow + 2 * direction) {
+            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === '';
+          }
+        } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
+          const target = board[endRow][endCol];
+          return target !== '' && (piece === 'P' ? target === target.toLowerCase() : target === target.toUpperCase());
         }
-        if (isStartingRow && endRow === startRow + 2 * direction) {
-          return board[startRow + direction][startCol] === '' && board[endRow][endCol] === ''; // move two squares forward if both empty
-        }
-      } 
-      // Capture diagonally
-      else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
-        const target = board[endRow][endCol];
-        return target !== '' && (piece === 'P' ? target === target.toLowerCase() : target === target.toUpperCase()); // capture only opponent piece
-      }
-    
-      return false;
-    }
+
+        return false;
       }
 
       function startGame() {
