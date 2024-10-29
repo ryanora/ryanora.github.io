@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chessboard with Full Rules</title>
+  <title>Simple Chessboard with Basic Movement</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.10.3/babel.min.js" crossorigin></script>
@@ -74,53 +74,32 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
-    function speak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      speechSynthesis.speak(utterance);
-    }
-
     function Game() {
       const [game, setGame] = React.useState(initialGameState);
       const [selectedSquare, setSelectedSquare] = React.useState(null);
-      const [isGameOver, setIsGameOver] = React.useState(false);
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [message, setMessage] = React.useState("Welcome to Chess!");
 
       function handleClick(row, col) {
-        if (isGameOver) return;
-
         if (selectedSquare) {
           const [selectedRow, selectedCol] = selectedSquare;
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
+          // Check if moving the correct player's piece
           if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
             if (isValidMove(piece, selectedRow, selectedCol, row, col, game)) {
+              // Make a copy of the game state
               const newGame = game.map(r => r.slice());
+
+              // Move the piece
               newGame[row][col] = piece;
               newGame[selectedRow][selectedCol] = '';
 
-              if (isCheck(newGame, !isWhiteTurn ? 'K' : 'k')) {
-                setMessage("Invalid move: would put king in check!");
-                return;
-              }
-
-              if (isCheck(newGame, isWhiteTurn ? 'k' : 'K')) {
-                const inCheck = isWhiteTurn ? 'Black' : 'White';
-                setMessage(`${inCheck} is in check!`);
-                speak(`${inCheck} is in check!`);
-              }
-
-              if (isCheckmate(newGame, !isWhiteTurn ? 'k' : 'K')) {
-                setIsGameOver(true);
-                const winner = isWhiteTurn ? 'White' : 'Black';
-                setMessage(`Checkmate! ${winner} wins!`);
-                speak(`Checkmate! ${winner} wins!`);
-              } else {
-                setGame(newGame);
-                setIsWhiteTurn(!isWhiteTurn);
-                setSelectedSquare(null);
-              }
+              setGame(newGame);
+              setIsWhiteTurn(!isWhiteTurn);
+              setSelectedSquare(null);
+              setMessage(`Turn: ${!isWhiteTurn ? 'White' : 'Black'}`);
             } else {
               setMessage("Invalid move! Try again.");
               setSelectedSquare(null);
@@ -136,87 +115,47 @@
       function isValidMove(piece, startRow, startCol, endRow, endCol, board) {
         const rowDiff = endRow - startRow;
         const colDiff = endCol - startCol;
+
         switch (piece.toLowerCase()) {
-          case 'p':
-            return isValidPawnMove(piece, startRow, startCol, endRow, endCol, board);
-          case 'r':
-            return isValidRookMove(startRow, startCol, endRow, endCol, board);
-          case 'n':
+          case 'p': // Pawn
+            const direction = piece === 'P' ? -1 : 1;
+            return isValidPawnMove(piece, startRow, startCol, endRow, endCol, board, direction);
+          case 'r': // Rook
+            return rowDiff === 0 || colDiff === 0;
+          case 'n': // Knight
             return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
-          case 'b':
-            return isValidBishopMove(startRow, startCol, endRow, endCol, board);
-          case 'q':
-            return isValidQueenMove(startRow, startCol, endRow, endCol, board);
-          case 'k':
+          case 'b': // Bishop
+            return Math.abs(rowDiff) === Math.abs(colDiff);
+          case 'q': // Queen
+            return rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff);
+          case 'k': // King
             return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
           default:
             return false;
         }
       }
 
-      function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
-        const direction = piece === 'P' ? -1 : 1;
-        if (startCol === endCol) {
-          if (endRow === startRow + direction) {
-            return board[endRow][endCol] === '';
+      function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board, direction) {
+        if (startCol === endCol) { // Moving forward
+          if (endRow === startRow + direction && board[endRow][endCol] === '') {
+            return true;
           }
-          if ((startRow === 6 || startRow === 1) && endRow === startRow + 2 * direction) {
-            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === '';
+          // Check if pawn is in the starting row for double move
+          const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
+          if (isStartingRow && endRow === startRow + 2 * direction && board[startRow + direction][startCol] === '' && board[endRow][endCol] === '') {
+            return true;
           }
-        } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
-          return board[endRow][endCol] && board[endRow][endCol] !== piece;
+        } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) { // Capturing diagonally
+          return board[endRow][endCol] && board[endRow][endCol].toLowerCase() !== piece.toLowerCase();
         }
         return false;
       }
 
-      function isCheck(board, kingPiece) {
-        const kingPosition = findKingPosition(board, kingPiece);
-        if (!kingPosition) return false;
-        const [kingRow, kingCol] = kingPosition;
-        return board.some((row, r) =>
-          row.some((square, c) => {
-            if (square && ((kingPiece === 'K' && square === square.toLowerCase()) || (kingPiece === 'k' && square === square.toUpperCase()))) {
-              return isValidMove(square, r, c, kingRow, kingCol, board);
-            }
-            return false;
-          })
-        );
-      }
-
-      function findKingPosition(board, kingPiece) {
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            if (board[r][c] === kingPiece) return [r, c];
-          }
-        }
-        return null;
-      }
-
-      function isCheckmate(board, kingPiece) {
-        return !board.some((row, r) =>
-          row.some((square, c) => {
-            if (square && ((kingPiece === 'K' && square === square.toUpperCase()) || (kingPiece === 'k' && square === square.toLowerCase()))) {
-              return findValidMoves(board, square, r, c).some(move => !isCheck(board, kingPiece));
-            }
-            return false;
-          })
-        );
-      }
-
       function startGame() {
         setGame(initialGameState);
-        setIsGameOver(false);
         setIsWhiteTurn(true);
         setSelectedSquare(null);
         setMessage("Game Started! Turn: White");
-        speak("Welcome to Chess! The game has started. White moves first.");
-      }
-
-      function endItAll() {
-        setIsGameOver(true);
-        const winner = isWhiteTurn ? 'Black' : 'White';
-        setMessage(`Game Over! ${winner} wins by default!`);
-        speak(`Game Over! ${winner} wins by default!`);
       }
 
       return (
@@ -225,7 +164,6 @@
             <h3>{message}</h3>
             <div className="btn-container">
               <button onClick={startGame}>Start New Game</button>
-              <button onClick={endItAll}>End It All</button>
             </div>
           </div>
           <Board game={game} onSquareClick={handleClick} selectedSquare={selectedSquare} />
