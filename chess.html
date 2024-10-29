@@ -74,7 +74,6 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
-    // Function for text-to-speech
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
       speechSynthesis.speak(utterance);
@@ -87,7 +86,6 @@
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [message, setMessage] = React.useState("Welcome to Chess!");
 
-      // Handle square clicks for piece selection and movement
       function handleClick(row, col) {
         if (isGameOver) return;
 
@@ -96,10 +94,8 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          // Check if capturing an opponent's piece
           if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
             if (isValidMove(piece, selectedRow, selectedCol, row, col, game)) {
-              // Clone the game state to avoid direct mutations
               const newGame = game.map(r => r.slice());
               newGame[row][col] = piece;
               newGame[selectedRow][selectedCol] = '';
@@ -137,7 +133,7 @@
           case 'r':
             return rowDiff === 0 || colDiff === 0;
           case 'n':
-            return Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1 || Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2;
+            return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
           case 'b':
             return Math.abs(rowDiff) === Math.abs(colDiff);
           case 'q':
