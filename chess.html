@@ -150,8 +150,8 @@
       }
 
       function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
-      const direction = piece === 'P' ? -1 : 1;
-      const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
+        const direction = piece === 'P' ? -1 : 1;
+        const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
     
       // Move forward
       if (startCol === endCol) {
