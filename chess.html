@@ -87,6 +87,7 @@
       const [isWhiteTurn, setIsWhiteTurn] = React.useState(true);
       const [message, setMessage] = React.useState("Welcome to Chess!");
 
+      // Handle square clicks for piece selection and movement
       function handleClick(row, col) {
         if (isGameOver) return;
 
@@ -95,14 +96,18 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          // Ensure selected piece is on the current player's turn
+          // Ensure selected piece belongs to the current player
           if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-            // Check if the move is valid and captures an opponent piece or moves to an empty square
-            if (isValidMove(piece, selectedRow, selectedCol, row, col, game) && (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))) {
+            // Check if the move is valid and if it's a capture or move to an empty square
+            if (
+              isValidMove(piece, selectedRow, selectedCol, row, col, game) &&
+              (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))
+            ) {
               const newGame = game.map(r => r.slice());
-              newGame[row][col] = piece;
-              newGame[selectedRow][selectedCol] = '';
+              newGame[row][col] = piece;           // Place piece in the new position
+              newGame[selectedRow][selectedCol] = ''; // Clear the old position
 
+              // Check if the move captures the king to end the game
               if (target && target.toLowerCase() === 'k') {
                 setIsGameOver(true);
                 const winner = piece === piece.toUpperCase() ? 'White' : 'Black';
@@ -121,6 +126,7 @@
             }
           }
         } else {
+          // Select the square only if it's the current player's piece
           if (game[row][col] && ((isWhiteTurn && game[row][col] === game[row][col].toUpperCase()) || (!isWhiteTurn && game[row][col] === game[row][col].toLowerCase()))) {
             setSelectedSquare([row, col]);
           }
@@ -134,13 +140,13 @@
           case 'p':
             return isValidPawnMove(piece, startRow, startCol, endRow, endCol, board);
           case 'r':
-            return (rowDiff === 0 || colDiff === 0) && clearPath(startRow, startCol, endRow, endCol, board);
+            return rowDiff === 0 || colDiff === 0;
           case 'n':
             return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
           case 'b':
-            return Math.abs(rowDiff) === Math.abs(colDiff) && clearPath(startRow, startCol, endRow, endCol, board);
+            return Math.abs(rowDiff) === Math.abs(colDiff);
           case 'q':
-            return (rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff)) && clearPath(startRow, startCol, endRow, endCol, board);
+            return rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff);
           case 'k':
             return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
           default:
@@ -148,34 +154,23 @@
         }
       }
 
-      function clearPath(startRow, startCol, endRow, endCol, board) {
-        const rowStep = Math.sign(endRow - startRow);
-        const colStep = Math.sign(endCol - startCol);
-        let currentRow = startRow + rowStep;
-        let currentCol = startCol + colStep;
-
-        while (currentRow !== endRow || currentCol !== endCol) {
-          if (board[currentRow][currentCol] !== '') return false;
-          currentRow += rowStep;
-          currentCol += colStep;
-        }
-        return true;
-      }
-
       function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
         const direction = piece === 'P' ? -1 : 1;
         const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
 
+        // Normal forward move
         if (startCol === endCol) {
           if (endRow === startRow + direction) {
-            return board[endRow][endCol] === '';
+            return board[endRow][endCol] === ''; // Move one square forward if empty
           }
           if (isStartingRow && endRow === startRow + 2 * direction) {
-            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === '';
+            return board[startRow + direction][startCol] === '' && board[endRow][endCol] === ''; // Move two squares forward if both empty
           }
-        } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
+        }
+        // Diagonal capture move
+        else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
           const target = board[endRow][endCol];
-          return target !== '' && (piece === 'P' ? target === target.toLowerCase() : target === target.toUpperCase());
+          return target !== '' && (piece === 'P' ? target === target.toLowerCase() : target === target.toUpperCase()); // Capture only opponent piece
         }
 
         return false;
