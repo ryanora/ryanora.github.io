@@ -94,9 +94,7 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          // Ensure selected piece belongs to the current player
           if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-            // Validate if it's a move or a capture
             if (
               isValidMove(piece, selectedRow, selectedCol, row, col, game) &&
               (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))
@@ -105,7 +103,6 @@
               newGame[row][col] = piece;           
               newGame[selectedRow][selectedCol] = ''; 
 
-              // If capturing a king, game over
               if (target && target.toLowerCase() === 'k') {
                 setIsGameOver(true);
                 const winner = piece === piece.toUpperCase() ? 'White' : 'Black';
@@ -137,13 +134,13 @@
           case 'p':
             return isValidPawnMove(piece, startRow, startCol, endRow, endCol, board);
           case 'r':
-            return (rowDiff === 0 || colDiff === 0) && clearPath(startRow, startCol, endRow, endCol, board);
+            return rowDiff === 0 || colDiff === 0;
           case 'n':
             return (Math.abs(rowDiff) === 2 && Math.abs(colDiff) === 1) || (Math.abs(rowDiff) === 1 && Math.abs(colDiff) === 2);
           case 'b':
-            return Math.abs(rowDiff) === Math.abs(colDiff) && clearPath(startRow, startCol, endRow, endCol, board);
+            return Math.abs(rowDiff) === Math.abs(colDiff);
           case 'q':
-            return (rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff)) && clearPath(startRow, startCol, endRow, endCol, board);
+            return rowDiff === 0 || colDiff === 0 || Math.abs(rowDiff) === Math.abs(colDiff);
           case 'k':
             return Math.abs(rowDiff) <= 1 && Math.abs(colDiff) <= 1;
           default:
@@ -151,24 +148,11 @@
         }
       }
 
-      function clearPath(startRow, startCol, endRow, endCol, board) {
-        const rowStep = Math.sign(endRow - startRow);
-        const colStep = Math.sign(endCol - startCol);
-        let currentRow = startRow + rowStep;
-        let currentCol = startCol + colStep;
-
-        while (currentRow !== endRow || currentCol !== endCol) {
-          if (board[currentRow][currentCol] !== '') return false;
-          currentRow += rowStep;
-          currentCol += colStep;
-        }
-        return true;
-      }
-
       function isValidPawnMove(piece, startRow, startCol, endRow, endCol, board) {
         const direction = piece === 'P' ? -1 : 1;
         const isStartingRow = (piece === 'P' && startRow === 6) || (piece === 'p' && startRow === 1);
 
+        // Move forward
         if (startCol === endCol) {
           if (endRow === startRow + direction) {
             return board[endRow][endCol] === ''; 
@@ -176,9 +160,11 @@
           if (isStartingRow && endRow === startRow + 2 * direction) {
             return board[startRow + direction][startCol] === '' && board[endRow][endCol] === ''; 
           }
-        } else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
+        } 
+        // Diagonal capture move
+        else if (Math.abs(startCol - endCol) === 1 && endRow === startRow + direction) {
           const target = board[endRow][endCol];
-          return target !== '' && (piece === 'P' ? target === target.toLowerCase() : target === target.toUpperCase());
+          return target !== '' && ((piece === 'P' && target === target.toLowerCase()) || (piece === 'p' && target === target.toUpperCase()));
         }
 
         return false;
