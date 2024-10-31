@@ -74,7 +74,6 @@
       'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg'
     };
 
-    // Function for text-to-speech
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
       speechSynthesis.speak(utterance);
@@ -95,9 +94,7 @@
           const piece = game[selectedRow][selectedCol];
           const target = game[row][col];
 
-          // Ensure selected piece is on the current player's turn
           if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) || (!isWhiteTurn && piece === piece.toLowerCase()))) {
-            // Check if the move is valid and captures an opponent piece or moves to an empty square
             if (isValidMove(piece, selectedRow, selectedCol, row, col, game) && (target === '' || (isWhiteTurn ? target === target.toLowerCase() : target === target.toUpperCase()))) {
               const newGame = game.map(r => r.slice());
               newGame[row][col] = piece;
