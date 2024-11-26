@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Fabric.js Chessboard</title>
+    <title>Enhanced Chess Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         canvas {
@@ -49,11 +49,12 @@
         let blackTime = 300;
         let timerInterval;
         const history = [];
-        const pieces = {}; // To store piece references for easier validation
+        const pieces = {}; // Store pieces on the board
 
         const sounds = {
             move: new Audio('https://freesound.org/data/previews/526/526496_1648170-lq.mp3'),
             invalid: new Audio('https://freesound.org/data/previews/173/173858_2394248-lq.mp3'),
+            capture: new Audio('https://freesound.org/data/previews/263/263133_3408636-lq.mp3'),
             timerEnd: new Audio('https://freesound.org/data/previews/202/202794_2437354-lq.mp3')
         };
 
@@ -102,6 +103,7 @@
         }
 
         function loadPieces(boardState) {
+            pieces.clear;
             boardState.forEach((row, rowIndex) => {
                 row.forEach((piece, colIndex) => {
                     if (piece !== '.') {
@@ -119,6 +121,7 @@
                             });
                             pieces[coordsToPosition(colIndex, rowIndex)] = svgPiece;
                             canvas.add(svgPiece);
+                            svgPiece.on('mousedown', () => handlePieceSelection(svgPiece));
                         });
                     }
                 });
@@ -149,13 +152,71 @@
             return `${file}${rank}`;
         }
 
-        function loadEndgame() {
-            const endgame = prompt('Paste your endgame JSON:');
-            if (endgame) {
-                const boardState = JSON.parse(endgame);
-                createChessboard();
-                loadPieces(boardState);
+        function positionToCoords(position) {
+            const col = position.charCodeAt(0) - 'a'.charCodeAt(0);
+            const row = 8 - parseInt(position[1]);
+            return {
+                x: col * squareSize + squareSize / 2,
+                y: row * squareSize + squareSize / 2
+            };
+        }
+
+        function handlePieceSelection(piece) {
+            if (piece.pieceColor !== turn) {
+                sounds.invalid.play();
+                alert(`It's ${turn}'s turn!`);
+                return;
             }
+            const fromPosition = coordsToPosition(
+                Math.floor(piece.left / squareSize),
+                Math.floor(piece.top / squareSize)
+            );
+
+            const toPosition = prompt(`Move ${fromPosition} to? (e.g., e4):`);
+            if (toPosition && validateMove(piece, fromPosition, toPosition)) {
+                movePiece(piece, fromPosition, toPosition);
+            } else {
+                sounds.invalid.play();
+                alert('Invalid move.');
+            }
+        }
+
+        function validateMove(piece, from, to) {
+            const fromCoords = positionToCoords(from);
+            const toCoords = positionToCoords(to);
+            const pieceType = piece.pieceType;
+            const deltaX = Math.abs(toCoords.x - fromCoords.x) / squareSize;
+            const deltaY = Math.abs(toCoords.y - fromCoords.y) / squareSize;
+
+            if (pieceType === 'p') {
+                if (deltaY === 1 && deltaX === 0) return true; // Basic pawn move
+            }
+            // Add other piece logic here...
+            return false;
+        }
+
+        function movePiece(piece, from, to) {
+            const toCoords = positionToCoords(to);
+            const targetPiece = pieces[to];
+
+            if (targetPiece && targetPiece.pieceColor !== piece.pieceColor) {
+                canvas.remove(targetPiece);
+                delete pieces[to];
+                sounds.capture.play();
+            }
+
+            piece.left = toCoords.x;
+            piece.top = toCoords.y;
+            piece.setCoords();
+            pieces[to] = piece;
+            delete pieces[from];
+
+            canvas.renderAll();
+            history.push(`${piece.pieceColor} ${piece.pieceType} from ${from} to ${to}`);
+            document.getElementById('history').innerHTML = history.join('<br/>');
+            turn = turn === 'white' ? 'black' : 'white';
+            sounds.move.play();
+            startTimer();
         }
 
         document.getElementById('start-btn').addEventListener('click', () => {
@@ -177,8 +238,6 @@
         document.getElementById('restart-btn').addEventListener('click', () => {
             location.reload();
         });
-
-        document.getElementById('load-endgame-btn').addEventListener('click', loadEndgame);
     </script>
 </body>
 </html>
