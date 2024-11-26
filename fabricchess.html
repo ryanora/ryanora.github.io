@@ -45,11 +45,11 @@
         const canvas = new fabric.Canvas('canvas');
         const squareSize = 50;
         let turn = 'white';
-        let whiteTime = 300;
-        let blackTime = 300;
+        let whiteTime = 300; // 5 minutes
+        let blackTime = 300; // 5 minutes
         let timerInterval;
         const history = [];
-        const pieces = {}; // Store pieces on the board
+        const pieces = {}; // To store pieces on the board
 
         const sounds = {
             move: new Audio('https://freesound.org/data/previews/526/526496_1648170-lq.mp3'),
@@ -103,7 +103,6 @@
         }
 
         function loadPieces(boardState) {
-            pieces.clear;
             boardState.forEach((row, rowIndex) => {
                 row.forEach((piece, colIndex) => {
                     if (piece !== '.') {
@@ -214,7 +213,10 @@
             canvas.renderAll();
             history.push(`${piece.pieceColor} ${piece.pieceType} from ${from} to ${to}`);
             document.getElementById('history').innerHTML = history.join('<br/>');
+
+            // Switch turns and start the timer for the next player
             turn = turn === 'white' ? 'black' : 'white';
+            console.log(`Turn switched to: ${turn}`);
             sounds.move.play();
             startTimer();
         }
