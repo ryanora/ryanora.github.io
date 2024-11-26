@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Chess Game</title>
+    <title>Drag-and-Drop Chess Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         canvas {
@@ -49,7 +49,7 @@
         let blackTime = 300; // 5 minutes
         let timerInterval;
         const history = [];
-        const pieces = {}; // To store pieces on the board
+        const pieces = {}; // Store pieces on the board
 
         const sounds = {
             move: new Audio('https://freesound.org/data/previews/526/526496_1648170-lq.mp3'),
@@ -120,7 +120,8 @@
                             });
                             pieces[coordsToPosition(colIndex, rowIndex)] = svgPiece;
                             canvas.add(svgPiece);
-                            svgPiece.on('mousedown', () => handlePieceSelection(svgPiece));
+                            svgPiece.on('moving', () => handleDrag(svgPiece));
+                            svgPiece.on('moved', () => handleDrop(svgPiece));
                         });
                     }
                 });
@@ -160,148 +161,61 @@
             };
         }
 
-        function handlePieceSelection(piece) {
-            if (piece.pieceColor !== turn) {
-                sounds.invalid.play();
-                alert(`It's ${turn}'s turn!`);
-                return;
-            }
+        function handleDrag(piece) {
+            // Ensure the piece stays within the board boundaries
+            piece.left = Math.max(0, Math.min(400 - squareSize, piece.left));
+            piece.top = Math.max(0, Math.min(400 - squareSize, piece.top));
+        }
+
+        function handleDrop(piece) {
             const fromPosition = coordsToPosition(
-                Math.floor(piece.left / squareSize),
-                Math.floor(piece.top / squareSize)
+                Math.floor((piece.left + squareSize / 2) / squareSize),
+                Math.floor((piece.top + squareSize / 2) / squareSize)
+            );
+            const toPosition = coordsToPosition(
+                Math.round((piece.left + squareSize / 2) / squareSize),
+                Math.round((piece.top + squareSize / 2) / squareSize)
             );
 
-            const toPosition = prompt(`Move ${fromPosition} to? (e.g., e4):`);
-            if (toPosition && validateMove(piece, fromPosition, toPosition)) {
+            piece.left = positionToCoords(toPosition).x;
+            piece.top = positionToCoords(toPosition).y;
+            piece.setCoords();
+            canvas.renderAll();
+
+            if (validateMove(piece, fromPosition, toPosition)) {
                 movePiece(piece, fromPosition, toPosition);
             } else {
                 sounds.invalid.play();
                 alert('Invalid move.');
+                piece.left = positionToCoords(fromPosition).x;
+                piece.top = positionToCoords(fromPosition).y;
+                piece.setCoords();
+                canvas.renderAll();
             }
         }
 
         function validateMove(piece, from, to) {
-            const fromCoords = positionToCoords(from);
-            const toCoords = positionToCoords(to);
-            const deltaX = Math.abs(toCoords.x - fromCoords.x) / squareSize;
-            const deltaY = Math.abs(toCoords.y - fromCoords.y) / squareSize;
-
-            const pieceType = piece.pieceType;
-            const pieceColor = piece.pieceColor;
-
-            // Ensure move is within the board
-            if (toCoords.x < 0 || toCoords.x >= 400 || toCoords.y < 0 || toCoords.y >= 400) {
-                return false;
+            // Add basic validation logic here
+            return true;
         }
-
-            // Check if the destination square is occupied by a friendly piece
-            const targetPiece = pieces[to];
-            if (targetPiece && targetPiece.pieceColor === pieceColor) {
-                return false;
-        }
-
-            // Piece-specific movement rules
-            switch (pieceType) {
-                case 'p': // Pawn
-                if (pieceColor === 'white') {
-                    if (deltaY === 1 && deltaX === 0 && !targetPiece && toCoords.y < fromCoords.y) {
-                        return true; // Move forward one square
-                }
-                if (deltaY === 1 && deltaX === 1 && targetPiece && toCoords.y < fromCoords.y) {
-                    return true; // Capture diagonally
-                }
-                }         else {
-                if (deltaY === 1 && deltaX === 0 && !targetPiece && toCoords.y > fromCoords.y) {
-                    return true; // Move forward one square
-                }
-                if (deltaY === 1 && deltaX === 1 && targetPiece && toCoords.y > fromCoords.y) {
-                    return true; // Capture diagonally
-                }
-            }
-            break;
-
-            case 'r': // Rook
-                if ((deltaX === 0 || deltaY === 0) && !isPathBlocked(fromCoords, toCoords)) {
-                    return true;
-            }
-                break;
-
-            case 'n': // Knight
-                if ((deltaX === 1 && deltaY === 2) || (deltaX === 2 && deltaY === 1)) {
-                    return true;
-                }
-                break;
-
-            case 'b': // Bishop
-                if (deltaX === deltaY && !isPathBlocked(fromCoords, toCoords)) {
-                    return true;
-                }
-                break;
-
-            case 'q': // Queen
-                if ((deltaX === deltaY || deltaX === 0 || deltaY === 0) && !isPathBlocked(fromCoords, toCoords)) {
-                    return true;
-                }
-                break;
-
-            case 'k': // King
-                if (deltaX <= 1 && deltaY <= 1) {
-                    return true;
-                }
-                break;
-
-            default:
-                break;
-        }
-
-            return false; // If no rules matched, the move is invalid
-        }
-
-        // Helper function to check if the path between two squares is blocked
-    function isPathBlocked(fromCoords, toCoords) {
-        const deltaX = toCoords.x - fromCoords.x;
-        const deltaY = toCoords.y - fromCoords.y;
-
-        const stepX = deltaX === 0 ? 0 : deltaX / Math.abs(deltaX);
-        const stepY = deltaY === 0 ? 0 : deltaY / Math.abs(deltaY);
-
-        let x = fromCoords.x + stepX * squareSize;
-        let y = fromCoords.y + stepY * squareSize;
-
-        while (x !== toCoords.x || y !== toCoords.y) {
-            const position = coordsToPosition(x / squareSize - 1, 8 - y / squareSize);
-            if (pieces[position]) {
-                return true; // Path is blocked
-            }
-            x += stepX * squareSize;
-            y += stepY * squareSize;
-        }    
-
-        return false; // Path is clear
-}
-        
 
         function movePiece(piece, from, to) {
-            const toCoords = positionToCoords(to);
             const targetPiece = pieces[to];
 
+            // Handle piece capture
             if (targetPiece && targetPiece.pieceColor !== piece.pieceColor) {
                 canvas.remove(targetPiece);
                 delete pieces[to];
                 sounds.capture.play();
             }
 
-            piece.left = toCoords.x;
-            piece.top = toCoords.y;
-            piece.setCoords();
             pieces[to] = piece;
             delete pieces[from];
 
-            canvas.renderAll();
             history.push(`${piece.pieceColor} ${piece.pieceType} from ${from} to ${to}`);
             document.getElementById('history').innerHTML = history.join('<br/>');
 
-            // Switch turns and start the timer for the next player
+            // Switch turns
             turn = turn === 'white' ? 'black' : 'white';
             console.log(`Turn switched to: ${turn}`);
             sounds.move.play();
