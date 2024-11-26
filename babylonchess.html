@@ -18,16 +18,15 @@
         const createScene = () => {
             const scene = new BABYLON.Scene(engine);
 
-            // Camera
+            // Camera and Light
             const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 20, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
-
-            // Light
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
             // Chessboard
             const boardSize = 8;
             const tiles = [];
+            const pieces = [];
             const createTile = (row, col) => {
                 const tile = BABYLON.MeshBuilder.CreateBox(`tile${row}_${col}`, { size: 1 }, scene);
                 tile.position = new BABYLON.Vector3(col - 3.5, 0, row - 3.5);
@@ -43,10 +42,7 @@
                 }
             }
 
-            // Chess Pieces
-            const pieces = [];
-            const pieceTypes = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"];
-
+            // Piece Creation
             const createPiece = (type, color, row, col) => {
                 let mesh;
                 const basePosition = tiles[row][col].position.clone();
@@ -87,20 +83,17 @@
             };
 
             const setupPieces = () => {
+                const pieceOrder = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"];
                 for (let col = 0; col < boardSize; col++) {
-                    // Pawns
                     createPiece("pawn", "white", 6, col);
                     createPiece("pawn", "black", 1, col);
-
-                    // Back row
-                    createPiece(pieceTypes[col], "white", 7, col);
-                    createPiece(pieceTypes[col], "black", 0, col);
+                    createPiece(pieceOrder[col], "white", 7, col);
+                    createPiece(pieceOrder[col], "black", 0, col);
                 }
             };
-
             setupPieces();
 
-            // Game state
+            // Game State
             let currentPlayer = "white";
             let selectedPiece = null;
             const turnIndicator = document.getElementById("turnIndicator");
@@ -112,13 +105,50 @@
             };
 
             const isValidMove = (piece, targetRow, targetCol) => {
-                // Add validation rules for all pieces here
-                return true; // For demonstration, all moves are valid
+                const deltaRow = targetRow - piece.row;
+                const deltaCol = targetCol - piece.col;
+                const absRow = Math.abs(deltaRow);
+                const absCol = Math.abs(deltaCol);
+
+                switch (piece.type) {
+                    case "pawn":
+                        const direction = piece.color === "white" ? -1 : 1;
+                        const startRow = piece.color === "white" ? 6 : 1;
+                        // Single or double forward move
+                        if (
+                            (deltaRow === direction && deltaCol === 0) ||
+                            (piece.row === startRow && deltaRow === 2 * direction && deltaCol === 0)
+                        ) {
+                            return true;
+                        }
+                        // Diagonal capture
+                        if (absRow === 1 && absCol === 1) {
+                            const targetPiece = pieces.find((p) => p.row === targetRow && p.col === targetCol);
+                            return targetPiece && targetPiece.color !== piece.color;
+                        }
+                        break;
+
+                    case "rook":
+                        return deltaRow === 0 || deltaCol === 0;
+
+                    case "knight":
+                        return (absRow === 2 && absCol === 1) || (absRow === 1 && absCol === 2);
+
+                    case "bishop":
+                        return absRow === absCol;
+
+                    case "queen":
+                        return absRow === absCol || deltaRow === 0 || deltaCol === 0;
+
+                    case "king":
+                        return absRow <= 1 && absCol <= 1;
+                }
+                return false;
             };
 
             const checkForCheckmate = () => {
-                // Add checkmate detection logic here
-                return false; // For demonstration, assume no checkmate
+                // Checkmate logic would go here
+                return false;
             };
 
             scene.onPointerDown = (evt, pickResult) => {
@@ -132,7 +162,7 @@
                         updateUI(`Selected ${pickedMesh.type}`);
                     }
                 } else if (selectedPiece && pickedMesh.name.startsWith("tile")) {
-                    // Move a piece
+                    // Move the piece
                     const [_, targetRow, targetCol] = pickedMesh.name.match(/tile(\d)_(\d)/).map(Number);
 
                     if (isValidMove(selectedPiece, targetRow, targetCol)) {
@@ -147,6 +177,8 @@
                         } else {
                             updateUI();
                         }
+                    } else {
+                        updateUI("Invalid move!");
                     }
                 }
             };
