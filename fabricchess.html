@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drag-and-Drop Chess Game</title>
+    <title>Click-to-Move Chess Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         canvas {
             border: 1px solid #000;
         }
+        #controls, #history {
+            margin-top: 10px;
+        }
         #history {
             height: 200px;
             overflow-y: auto;
             border: 1px solid #000;
-            margin-top: 10px;
             padding: 5px;
         }
         #hud {
@@ -31,6 +33,11 @@
         <div id="white-timer">White: 05:00</div>
         <div id="black-timer">Black: 05:00</div>
     </div>
+    <div id="controls">
+        <button id="start-btn">Start Game</button>
+        <button id="restart-btn">Restart Game</button>
+        <button id="load-endgame-btn">Load Endgame</button>
+    </div>
     <canvas id="canvas" width="400" height="400"></canvas>
     <div id="history"></div>
 
@@ -43,7 +50,7 @@
         let timerInterval;
         const history = [];
         const pieces = {}; // Store pieces on the board
-        let originalPosition = null; // Track the original position before drag
+        let selectedPiece = null; // Track the currently selected piece
 
         const sounds = {
             move: new Audio('https://freesound.org/data/previews/526/526496_1648170-lq.mp3'),
@@ -91,6 +98,7 @@
                         height: squareSize,
                         selectable: false
                     });
+                    square.on('mousedown', () => handleSquareClick(row, col));
                     canvas.add(square);
                 }
             }
@@ -114,20 +122,7 @@
                             });
                             pieces[coordsToPosition(colIndex, rowIndex)] = svgPiece;
                             canvas.add(svgPiece);
-
-                            // Drag-and-drop events
-                            svgPiece.on('mousedown', () => {
-                                originalPosition = {
-                                    x: svgPiece.left,
-                                    y: svgPiece.top,
-                                    position: coordsToPosition(
-                                        Math.floor(svgPiece.left / squareSize),
-                                        Math.floor(svgPiece.top / squareSize)
-                                    )
-                                };
-                            });
-
-                            svgPiece.on('mouseup', () => handleDrop(svgPiece));
+                            svgPiece.on('mousedown', () => handlePieceClick(svgPiece));
                         });
                     }
                 });
@@ -167,29 +162,30 @@
             };
         }
 
-        function handleDrop(piece) {
-            const toPosition = coordsToPosition(
-                Math.round((piece.left - squareSize / 2) / squareSize),
-                Math.round((piece.top - squareSize / 2) / squareSize)
-            );
+        function handlePieceClick(piece) {
+            if (piece.pieceColor !== turn) {
+                sounds.invalid.play();
+                alert(`It's ${turn}'s turn!`);
+                return;
+            }
+            selectedPiece = piece;
+            console.log(`Selected piece: ${coordsToPosition(Math.floor(piece.left / squareSize), Math.floor(piece.top / squareSize))}`);
+        }
 
-            const fromPosition = originalPosition.position;
+        function handleSquareClick(row, col) {
+            if (!selectedPiece) return;
 
-            piece.left = positionToCoords(toPosition).x;
-            piece.top = positionToCoords(toPosition).y;
-            piece.setCoords();
-            canvas.renderAll();
+            const fromPosition = coordsToPosition(Math.floor(selectedPiece.left / squareSize), Math.floor(selectedPiece.top / squareSize));
+            const toPosition = coordsToPosition(col, row);
 
-            if (validateMove(piece, fromPosition, toPosition)) {
-                movePiece(piece, fromPosition, toPosition);
+            if (validateMove(selectedPiece, fromPosition, toPosition)) {
+                movePiece(selectedPiece, fromPosition, toPosition);
             } else {
                 sounds.invalid.play();
                 alert('Invalid move.');
-                piece.left = originalPosition.x;
-                piece.top = originalPosition.y;
-                piece.setCoords();
-                canvas.renderAll();
             }
+
+            selectedPiece = null; // Clear the selection after the move attempt
         }
 
         function validateMove(piece, from, to) {
@@ -213,10 +209,18 @@
             pieces[to] = piece;
             delete pieces[from];
 
+            const toCoords = positionToCoords(to);
+            piece.left = toCoords.x;
+            piece.top = toCoords.y;
+            piece.setCoords();
+            canvas.renderAll();
+
             history.push(`${piece.pieceColor} ${piece.pieceType} from ${from} to ${to}`);
             document.getElementById('history').innerHTML = history.join('<br/>');
 
+            // Switch turns
             turn = turn === 'white' ? 'black' : 'white';
+            console.log(`Turn switched to: ${turn}`);
             sounds.move.play();
             startTimer();
         }
