@@ -43,88 +43,75 @@
             }
 
             // Piece Creation
-        const createPiece = (type, color, row, col) => {
-            let mesh;
-            const basePosition = tiles[row][col].position.clone();
-            basePosition.y = 0.5;
+            const createPiece = (type, color, row, col) => {
+                let mesh;
+                const basePosition = tiles[row][col].position.clone();
+                basePosition.y = 0.5;
 
-            const baseMaterial = new BABYLON.StandardMaterial(`${color}_${type}_mat`, scene);
-            baseMaterial.diffuseColor = color === "white" ? new BABYLON.Color3(1, 1, 1) : new BABYLON.Color3(0, 0, 0);
+                const baseMaterial = new BABYLON.StandardMaterial(`${color}_${type}_mat`, scene);
+                baseMaterial.diffuseColor = color === "white" ? new BABYLON.Color3(1, 1, 1) : new BABYLON.Color3(0, 0, 0);
 
-        switch (type) {
-            case "pawn":
-                // Pawn: Rounded top, cylindrical base
-                const pawnTop = BABYLON.MeshBuilder.CreateSphere(`${color}_pawn_top`, { diameter: 0.5 }, scene);
-                const pawnBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_pawn_base`, { diameter: 0.3, height: 0.5 }, scene);
-                pawnBase.position.y = -0.25;
-                mesh = BABYLON.Mesh.MergeMeshes([pawnTop, pawnBase], true);
-                break;
+                switch (type) {
+                    case "pawn":
+                        const pawnTop = BABYLON.MeshBuilder.CreateSphere(`${color}_pawn_top`, { diameter: 0.5 }, scene);
+                        const pawnBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_pawn_base`, { diameter: 0.3, height: 0.5 }, scene);
+                        pawnBase.position.y = -0.25;
+                        mesh = BABYLON.Mesh.MergeMeshes([pawnTop, pawnBase], true);
+                        break;
 
-            case "rook":
-                // Rook: Cylindrical base with a crenellated top
-                const rookBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_rook_base`, { diameter: 0.6, height: 0.7 }, scene);
-                const rookTop = BABYLON.MeshBuilder.CreateCylinder(`${color}_rook_top`, { diameter: 0.7, height: 0.3, tessellation: 8 }, scene);
-                rookTop.position.y = 0.5;
-                mesh = BABYLON.Mesh.MergeMeshes([rookBase, rookTop], true);
-                break;
+                    case "rook":
+                        const rookBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_rook_base`, { diameter: 0.6, height: 0.7 }, scene);
+                        const rookTop = BABYLON.MeshBuilder.CreateCylinder(`${color}_rook_top`, { diameter: 0.7, height: 0.3, tessellation: 8 }, scene);
+                        rookTop.position.y = 0.5;
+                        mesh = BABYLON.Mesh.MergeMeshes([rookBase, rookTop], true);
+                        break;
 
-            case "knight":
-                // Knight: Abstract horse head using spheres and cylinders
-                const knightBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_knight_base`, { diameter: 0.6, height: 0.5 }, scene);
-                const knightHead = BABYLON.MeshBuilder.CreateBox(`${color}_knight_head`, { size: 0.5 }, scene);
-                knightHead.position.y = 0.5;
-                mesh = BABYLON.Mesh.MergeMeshes([knightBase, knightHead], true);
-                break;
+                    case "knight":
+                        const knightBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_knight_base`, { diameter: 0.6, height: 0.5 }, scene);
+                        const knightHead = BABYLON.MeshBuilder.CreateBox(`${color}_knight_head`, { size: 0.5 }, scene);
+                        knightHead.position.y = 0.5;
+                        mesh = BABYLON.Mesh.MergeMeshes([knightBase, knightHead], true);
+                        break;
 
-            case "bishop":
-                // Bishop: Tall base with a spherical top and slant cut
-                const bishopBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_bishop_base`, { diameter: 0.4, height: 1 }, scene);
-                const bishopTop = BABYLON.MeshBuilder.CreateSphere(`${color}_bishop_top`, { diameter: 0.5 }, scene);
-                bishopTop.position.y = 0.5;
-                const bishopCut = BABYLON.MeshBuilder.CreateBox(`${color}_bishop_cut`, { width: 0.5, height: 0.5, depth: 0.5 }, scene);
-                bishopCut.position.y = 0.7;
-                bishopCut.rotation.y = Math.PI / 4;
-                mesh = BABYLON.CSG.FromMesh(bishopBase)
-                    .subtract(BABYLON.CSG.FromMesh(bishopCut))
-                    .toMesh();
-                mesh = BABYLON.Mesh.MergeMeshes([bishopTop, mesh], true);
-                break;
+                    case "bishop":
+                        const bishopBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_bishop_base`, { diameter: 0.4, height: 1 }, scene);
+                        const bishopTop = BABYLON.MeshBuilder.CreateSphere(`${color}_bishop_top`, { diameter: 0.5 }, scene);
+                        bishopTop.position.y = 0.5;
+                        mesh = BABYLON.Mesh.MergeMeshes([bishopBase, bishopTop], true);
+                        break;
 
-            case "queen":
-                // Queen: Wide base, cylindrical middle, and crown top
-                const queenBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_queen_base`, { diameter: 0.7, height: 0.5 }, scene);
-                const queenMiddle = BABYLON.MeshBuilder.CreateCylinder(`${color}_queen_middle`, { diameter: 0.4, height: 0.7 }, scene);
-                queenMiddle.position.y = 0.6;
-                const queenCrown = BABYLON.MeshBuilder.CreateTorus(`${color}_queen_crown`, { diameter: 0.5, thickness: 0.1, tessellation: 24 }, scene);
-                queenCrown.position.y = 1.2;
-                mesh = BABYLON.Mesh.MergeMeshes([queenBase, queenMiddle, queenCrown], true);
-                break;
+                    case "queen":
+                        const queenBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_queen_base`, { diameter: 0.7, height: 0.5 }, scene);
+                        const queenMiddle = BABYLON.MeshBuilder.CreateCylinder(`${color}_queen_middle`, { diameter: 0.4, height: 0.7 }, scene);
+                        queenMiddle.position.y = 0.6;
+                        const queenCrown = BABYLON.MeshBuilder.CreateTorus(`${color}_queen_crown`, { diameter: 0.5, thickness: 0.1, tessellation: 24 }, scene);
+                        queenCrown.position.y = 1.2;
+                        mesh = BABYLON.Mesh.MergeMeshes([queenBase, queenMiddle, queenCrown], true);
+                        break;
 
-            case "king":
-                // King: Wide base, cylindrical middle, cross on top
-                const kingBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_king_base`, { diameter: 0.7, height: 0.5 }, scene);
-                const kingMiddle = BABYLON.MeshBuilder.CreateCylinder(`${color}_king_middle`, { diameter: 0.4, height: 0.7 }, scene);
-                kingMiddle.position.y = 0.6;
-                const kingCrossVertical = BABYLON.MeshBuilder.CreateBox(`${color}_king_cross_v`, { height: 0.3, width: 0.05, depth: 0.05 }, scene);
-                const kingCrossHorizontal = BABYLON.MeshBuilder.CreateBox(`${color}_king_cross_h`, { height: 0.05, width: 0.3, depth: 0.05 }, scene);
-                kingCrossVertical.position.y = 1.3;
-                kingCrossHorizontal.position.y = 1.3;
-                mesh = BABYLON.Mesh.MergeMeshes([kingBase, kingMiddle, kingCrossVertical, kingCrossHorizontal], true);
-                break;
-        }
+                    case "king":
+                        const kingBase = BABYLON.MeshBuilder.CreateCylinder(`${color}_king_base`, { diameter: 0.7, height: 0.5 }, scene);
+                        const kingMiddle = BABYLON.MeshBuilder.CreateCylinder(`${color}_king_middle`, { diameter: 0.4, height: 0.7 }, scene);
+                        kingMiddle.position.y = 0.6;
+                        const kingCrossVertical = BABYLON.MeshBuilder.CreateBox(`${color}_king_cross_v`, { height: 0.3, width: 0.05, depth: 0.05 }, scene);
+                        const kingCrossHorizontal = BABYLON.MeshBuilder.CreateBox(`${color}_king_cross_h`, { height: 0.05, width: 0.3, depth: 0.05 }, scene);
+                        kingCrossVertical.position.y = 1.3;
+                        kingCrossHorizontal.position.y = 1.3;
+                        mesh = BABYLON.Mesh.MergeMeshes([kingBase, kingMiddle, kingCrossVertical, kingCrossHorizontal], true);
+                        break;
+                }
 
-        // Apply material to the piece and set position
-        mesh.material = baseMaterial;
-        mesh.position = basePosition;
-        mesh.row = row;
-        mesh.col = col;
-        mesh.color = color;
-        mesh.type = type;
-        pieces.push(mesh);
+                // Apply material to the piece and set position
+                mesh.material = baseMaterial;
+                mesh.position = basePosition;
+                mesh.row = row;
+                mesh.col = col;
+                mesh.color = color;
+                mesh.type = type;
+                pieces.push(mesh);
 
-        return mesh;
-        };
-    
+                return mesh;
+            };
 
             const setupPieces = () => {
                 const pieceOrder = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"];
@@ -144,7 +131,7 @@
             const gameStatus = document.getElementById("gameStatus");
 
             const updateUI = (message) => {
-                turnIndicator.innerText = `Turn: ${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}`;
+                turnIndicator.innerText = currentPlayer ? `Turn: ${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}` : "";
                 gameStatus.innerText = message || "";
             };
 
@@ -173,8 +160,7 @@
                         break;
 
                     case "rook":
-                        if (deltaRow === 0 || deltaCol === 0) return true;
-                        break;
+                        return (deltaRow === 0 || deltaCol === 0);
 
                     case "knight":
                         return (absRow === 2 && absCol === 1) || (absRow === 1 && absCol === 2);
@@ -195,9 +181,19 @@
             const capturePiece = (targetRow, targetCol) => {
                 const targetPiece = pieces.find((p) => p.row === targetRow && p.col === targetCol);
                 if (targetPiece) {
+                    if (targetPiece.type === "king") {
+                        gameOver(targetPiece.color);
+                    }
                     pieces.splice(pieces.indexOf(targetPiece), 1);
                     targetPiece.dispose();
                 }
+            };
+
+            const gameOver = (loserColor) => {
+                const winner = loserColor === "white" ? "Black" : "White";
+                gameStatus.innerText = `Game Over! ${winner} wins.`;
+                selectedPiece = null;
+                currentPlayer = null; // Stop gameplay
             };
 
             scene.onPointerDown = (evt, pickResult) => {
