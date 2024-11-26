@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Click-to-Move Chess Game</title>
+    <title>Drag-and-Drop Chess Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         canvas {
@@ -27,18 +27,16 @@
     <div id="controls">
         <button id="start-btn">Start Game</button>
         <button id="restart-btn">Restart Game</button>
-        <button id="load-endgame-btn">Load Endgame</button>
     </div>
     <canvas id="canvas" width="400" height="400"></canvas>
     <div id="history"></div>
 
     <script>
-        const canvas = new fabric.Canvas('canvas');
+        const canvas = new fabric.Canvas('canvas', { selection: false });
         const squareSize = 50;
         let turn = 'white';
         const history = [];
         const pieces = {}; // Store pieces on the board
-        let selectedPiece = null; // Track the currently selected piece
 
         const sounds = {
             move: new Audio('https://freesound.org/data/previews/526/526496_1648170-lq.mp3'),
@@ -59,7 +57,6 @@
                         height: squareSize,
                         selectable: false
                     });
-                    square.on('mousedown', () => handleSquareClick(row, col));
                     canvas.add(square);
                 }
             }
@@ -83,7 +80,15 @@
                             });
                             pieces[coordsToPosition(colIndex, rowIndex)] = svgPiece;
                             canvas.add(svgPiece);
-                            svgPiece.on('mousedown', () => handlePieceClick(svgPiece));
+
+                            // Add drag-and-drop behavior
+                            svgPiece.on('moving', function () {
+                                keepWithinBounds(this);
+                            });
+
+                            svgPiece.on('moved', function () {
+                                handlePieceDrop(this);
+                            });
                         });
                     }
                 });
@@ -123,29 +128,44 @@
             };
         }
 
-        function handlePieceClick(piece) {
-            if (piece.pieceColor !== turn) {
-                sounds.invalid.play();
-                alert(`It's ${turn}'s turn!`);
-                return;
-            }
-            selectedPiece = piece;
+        function keepWithinBounds(piece) {
+            piece.left = Math.max(0, Math.min(piece.left, canvas.width - squareSize));
+            piece.top = Math.max(0, Math.min(piece.top, canvas.height - squareSize));
         }
 
-        function handleSquareClick(row, col) {
-            if (!selectedPiece) return;
+        function handlePieceDrop(piece) {
+            const col = Math.round(piece.left / squareSize);
+            const row = Math.round(piece.top / squareSize);
 
-            const fromPosition = coordsToPosition(Math.floor(selectedPiece.left / squareSize), Math.floor(selectedPiece.top / squareSize));
+            const fromPosition = coordsToPosition(
+                Math.floor(piece.originalLeft / squareSize),
+                Math.floor(piece.originalTop / squareSize)
+            );
+
             const toPosition = coordsToPosition(col, row);
 
-            if (validateMove(selectedPiece, fromPosition, toPosition)) {
-                movePiece(selectedPiece, fromPosition, toPosition);
+            if (validateMove(piece, fromPosition, toPosition)) {
+                const toCoords = positionToCoords(toPosition);
+                piece.left = toCoords.x;
+                piece.top = toCoords.y;
+                piece.setCoords();
+                canvas.renderAll();
+
+                history.push(`${piece.pieceColor} ${piece.pieceType} from ${fromPosition} to ${toPosition}`);
+                document.getElementById('history').innerHTML = history.join('<br/>');
+
+                // Switch turns
+                turn = turn === 'white' ? 'black' : 'white';
+                sounds.move.play();
             } else {
+                // Revert to original position if move is invalid
+                piece.left = piece.originalLeft;
+                piece.top = piece.originalTop;
+                piece.setCoords();
+                canvas.renderAll();
                 sounds.invalid.play();
                 alert('Invalid move.');
             }
-
-            selectedPiece = null; // Clear the selection after the move attempt
         }
 
         function validateMove(piece, from, to) {
@@ -154,33 +174,6 @@
             }
 
             return true; // Add specific chess logic here
-        }
-
-        function movePiece(piece, from, to) {
-            const targetPiece = pieces[to];
-
-            // Handle piece capture
-            if (targetPiece && targetPiece.pieceColor !== piece.pieceColor) {
-                canvas.remove(targetPiece);
-                delete pieces[to];
-                sounds.capture.play();
-            }
-
-            pieces[to] = piece;
-            delete pieces[from];
-
-            const toCoords = positionToCoords(to);
-            piece.left = toCoords.x;
-            piece.top = toCoords.y;
-            piece.setCoords();
-            canvas.renderAll();
-
-            history.push(`${piece.pieceColor} ${piece.pieceType} from ${from} to ${to}`);
-            document.getElementById('history').innerHTML = history.join('<br/>');
-
-            // Switch turns
-            turn = turn === 'white' ? 'black' : 'white';
-            sounds.move.play();
         }
 
         document.getElementById('start-btn').addEventListener('click', () => {
