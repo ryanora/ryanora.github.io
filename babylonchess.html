@@ -110,20 +110,21 @@
                 const absRow = Math.abs(deltaRow);
                 const absCol = Math.abs(deltaCol);
 
+                const targetPiece = pieces.find((p) => p.row === targetRow && p.col === targetCol);
+
                 switch (piece.type) {
                     case "pawn":
                         const direction = piece.color === "white" ? -1 : 1;
                         const startRow = piece.color === "white" ? 6 : 1;
 
-                        if (deltaCol === 0) {
-                            const pathClear = !pieces.some((p) => p.row === targetRow && p.col === targetCol);
-                            if ((deltaRow === direction || (piece.row === startRow && deltaRow === 2 * direction)) && pathClear) {
+                        if (!targetPiece && deltaCol === 0) {
+                            if ((deltaRow === direction) || (piece.row === startRow && deltaRow === 2 * direction)) {
                                 return true;
                             }
                         }
-                        if (absCol === 1 && deltaRow === direction) {
-                            const targetPiece = pieces.find((p) => p.row === targetRow && p.col === targetCol);
-                            return targetPiece && targetPiece.color !== piece.color;
+
+                        if (targetPiece && absCol === 1 && deltaRow === direction) {
+                            return targetPiece.color !== piece.color;
                         }
                         break;
 
@@ -143,6 +144,7 @@
                     case "king":
                         return absRow <= 1 && absCol <= 1;
                 }
+
                 return false;
             };
 
@@ -159,13 +161,11 @@
                 if (!pickedMesh) return;
 
                 if (pieces.includes(pickedMesh)) {
-                    // Select a piece
                     if (pickedMesh.color === currentPlayer) {
                         selectedPiece = pickedMesh;
                         updateUI(`Selected ${pickedMesh.type}`);
                     }
                 } else if (selectedPiece && pickedMesh.name.startsWith("tile")) {
-                    // Move the piece
                     const [_, targetRow, targetCol] = pickedMesh.name.match(/tile(\d)_(\d)/).map(Number);
 
                     if (isValidMove(selectedPiece, targetRow, targetCol)) {
