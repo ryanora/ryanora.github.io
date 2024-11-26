@@ -18,21 +18,12 @@
             border: 1px solid #000;
             padding: 5px;
         }
-        #hud {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
         button {
             margin: 5px;
         }
     </style>
 </head>
 <body>
-    <div id="hud">
-        <div id="white-timer">White: 05:00</div>
-        <div id="black-timer">Black: 05:00</div>
-    </div>
     <div id="controls">
         <button id="start-btn">Start Game</button>
         <button id="restart-btn">Restart Game</button>
@@ -45,9 +36,6 @@
         const canvas = new fabric.Canvas('canvas');
         const squareSize = 50;
         let turn = 'white';
-        let whiteTime = 300; // 5 minutes
-        let blackTime = 300; // 5 minutes
-        let timerInterval;
         const history = [];
         const pieces = {}; // Store pieces on the board
         let selectedPiece = null; // Track the currently selected piece
@@ -55,56 +43,8 @@
         const sounds = {
             move: new Audio('https://freesound.org/data/previews/526/526496_1648170-lq.mp3'),
             invalid: new Audio('https://freesound.org/data/previews/173/173858_2394248-lq.mp3'),
-            capture: new Audio('https://freesound.org/data/previews/263/263133_3408636-lq.mp3'),
-            timerEnd: new Audio('https://freesound.org/data/previews/202/202794_2437354-lq.mp3')
+            capture: new Audio('https://freesound.org/data/previews/263/263133_3408636-lq.mp3')
         };
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (turn === 'white') {
-                    whiteTime--;
-                    updateTimerDisplay('white');
-                } else {
-                    blackTime--;
-                    updateTimerDisplay('black');
-                }
-
-                // Check if time has run out for the current player
-                if (turn === 'white' && whiteTime <= 0) {
-                    clearInterval(timerInterval);
-                    sounds.timerEnd.play();
-                    alert("White's time is up!");
-                } else if (turn === 'black' && blackTime <= 0) {
-                    clearInterval(timerInterval);
-                    sounds.timerEnd.play();
-                    alert("Black's time is up!");
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay(activeColor) {
-            const whiteTimerElement = document.getElementById('white-timer');
-            const blackTimerElement = document.getElementById('black-timer');
-
-            // Format the time display for both timers
-            const whiteMinutes = String(Math.floor(whiteTime / 60)).padStart(2, '0');
-            const whiteSeconds = String(whiteTime % 60).padStart(2, '0');
-            const blackMinutes = String(Math.floor(blackTime / 60)).padStart(2, '0');
-            const blackSeconds = String(blackTime % 60).padStart(2, '0');
-
-            whiteTimerElement.innerText = `White: ${whiteMinutes}:${whiteSeconds}`;
-            blackTimerElement.innerText = `Black: ${blackMinutes}:${blackSeconds}`;
-
-            // Highlight the active player's timer
-            if (activeColor === 'white') {
-                whiteTimerElement.style.fontWeight = 'bold';
-                blackTimerElement.style.fontWeight = 'normal';
-            } else {
-                whiteTimerElement.style.fontWeight = 'normal';
-                blackTimerElement.style.fontWeight = 'bold';
-            }
-        }
 
         function createChessboard() {
             canvas.clear();
@@ -241,7 +181,6 @@
             // Switch turns
             turn = turn === 'white' ? 'black' : 'white';
             sounds.move.play();
-            startTimer();
         }
 
         document.getElementById('start-btn').addEventListener('click', () => {
@@ -257,7 +196,6 @@
                 ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
             ];
             loadPieces(initialState);
-            startTimer();
         });
 
         document.getElementById('restart-btn').addEventListener('click', () => {
