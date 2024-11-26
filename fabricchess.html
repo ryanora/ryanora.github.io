@@ -183,16 +183,103 @@
         function validateMove(piece, from, to) {
             const fromCoords = positionToCoords(from);
             const toCoords = positionToCoords(to);
-            const pieceType = piece.pieceType;
             const deltaX = Math.abs(toCoords.x - fromCoords.x) / squareSize;
             const deltaY = Math.abs(toCoords.y - fromCoords.y) / squareSize;
 
-            if (pieceType === 'p') {
-                if (deltaY === 1 && deltaX === 0) return true; // Basic pawn move
-            }
-            // Add other piece logic here...
-            return false;
+            const pieceType = piece.pieceType;
+            const pieceColor = piece.pieceColor;
+
+            // Ensure move is within the board
+            if (toCoords.x < 0 || toCoords.x >= 400 || toCoords.y < 0 || toCoords.y >= 400) {
+                return false;
         }
+
+            // Check if the destination square is occupied by a friendly piece
+            const targetPiece = pieces[to];
+            if (targetPiece && targetPiece.pieceColor === pieceColor) {
+                return false;
+        }
+
+            // Piece-specific movement rules
+            switch (pieceType) {
+                case 'p': // Pawn
+                if (pieceColor === 'white') {
+                    if (deltaY === 1 && deltaX === 0 && !targetPiece && toCoords.y < fromCoords.y) {
+                        return true; // Move forward one square
+                }
+                if (deltaY === 1 && deltaX === 1 && targetPiece && toCoords.y < fromCoords.y) {
+                    return true; // Capture diagonally
+                }
+                }         else {
+                if (deltaY === 1 && deltaX === 0 && !targetPiece && toCoords.y > fromCoords.y) {
+                    return true; // Move forward one square
+                }
+                if (deltaY === 1 && deltaX === 1 && targetPiece && toCoords.y > fromCoords.y) {
+                    return true; // Capture diagonally
+                }
+            }
+            break;
+
+            case 'r': // Rook
+                if ((deltaX === 0 || deltaY === 0) && !isPathBlocked(fromCoords, toCoords)) {
+                    return true;
+            }
+                break;
+
+            case 'n': // Knight
+                if ((deltaX === 1 && deltaY === 2) || (deltaX === 2 && deltaY === 1)) {
+                    return true;
+                }
+                break;
+
+            case 'b': // Bishop
+                if (deltaX === deltaY && !isPathBlocked(fromCoords, toCoords)) {
+                    return true;
+                }
+                break;
+
+            case 'q': // Queen
+                if ((deltaX === deltaY || deltaX === 0 || deltaY === 0) && !isPathBlocked(fromCoords, toCoords)) {
+                    return true;
+                }
+                break;
+
+            case 'k': // King
+                if (deltaX <= 1 && deltaY <= 1) {
+                    return true;
+                }
+                break;
+
+            default:
+                break;
+        }
+
+            return false; // If no rules matched, the move is invalid
+        }
+
+        // Helper function to check if the path between two squares is blocked
+    function isPathBlocked(fromCoords, toCoords) {
+        const deltaX = toCoords.x - fromCoords.x;
+        const deltaY = toCoords.y - fromCoords.y;
+
+        const stepX = deltaX === 0 ? 0 : deltaX / Math.abs(deltaX);
+        const stepY = deltaY === 0 ? 0 : deltaY / Math.abs(deltaY);
+
+        let x = fromCoords.x + stepX * squareSize;
+        let y = fromCoords.y + stepY * squareSize;
+
+        while (x !== toCoords.x || y !== toCoords.y) {
+            const position = coordsToPosition(x / squareSize - 1, 8 - y / squareSize);
+            if (pieces[position]) {
+                return true; // Path is blocked
+            }
+            x += stepX * squareSize;
+            y += stepY * squareSize;
+        }    
+
+        return false; // Path is clear
+}
+        
 
         function movePiece(piece, from, to) {
             const toCoords = positionToCoords(to);
